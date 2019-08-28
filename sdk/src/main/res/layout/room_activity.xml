@@ -14,36 +14,37 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <RelativeLayout
+        <LinearLayout
             android:id="@+id/ll_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
             android:fitsSystemWindows="true"
             android:orientation="horizontal">
+
             <ImageButton
                 android:id="@+id/rtc_double_room_back_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_gravity="left|center_vertical"
                 android:background="@color/transparent"
-                android:paddingBottom="10dp"
                 android:paddingLeft="10dp"
-                android:paddingRight="10dp"
                 android:paddingTop="10dp"
+                android:paddingRight="10dp"
+                android:paddingBottom="10dp"
                 android:src="@mipmap/ic_back" />
 
             <TextView
                 android:id="@+id/tv_room_id"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="wrap_content"
                 android:layout_gravity="left|center_vertical"
                 android:gravity="center"
                 android:singleLine="true"
                 android:textColor="@color/colorWhite"
                 android:textSize="23dp" />
 
-        </RelativeLayout>
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/ll_control"
@@ -112,7 +113,8 @@
                 android:layout_marginLeft="@dimen/icon_margin"
                 android:clickable="true"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone">
 
                 <ImageView
                     android:id="@+id/iv_log"
@@ -162,66 +164,84 @@
             android:id="@+id/layoutFaceBeauty"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
             android:layout_above="@id/ll_control"
+            android:layout_gravity="bottom"
             android:clickable="true"
-            android:visibility="gone"/>
+            android:visibility="gone" />
 
     </RelativeLayout>
 
     <LinearLayout
-        android:id="@+id/msgTest"
-        android:layout_width="225dp"
+        android:id="@+id/sendMsg_layout"
+        android:layout_width="400dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="50dp"
-        android:layout_marginTop="150dp"
-        android:background="@color/colorMask"
+        android:layout_gravity="center"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:background="@drawable/shape_round_corner_trtc"
+        android:clickable="true"
         android:orientation="vertical"
-        android:visibility="visible">
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        android:visibility="gone">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/textView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="消息ID"
-                android:textColor="@color/c3" />
-
-            <EditText
-                android:id="@+id/msgId_et"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ems="10" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/textView2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="参  数"
-                android:textColor="@color/c3" />
-
-            <EditText
-                android:id="@+id/value_et"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ems="10" />
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/send_btn"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="发送" />
+            android:clickable="true"
+            android:text="发送消息"
+            android:textColor="@android:color/white"
+            android:textSize="20dp" />
+
+        <EditText
+            android:id="@+id/msgId_et"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginRight="10dp"
+            android:hint="消息Id"
+            android:singleLine="true"
+            android:textColor="@android:color/black"
+            android:textColorHint="@android:color/black"
+            android:textSize="15dp" />
+
+        <EditText
+            android:id="@+id/value_et"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginRight="10dp"
+            android:hint="消息内容"
+            android:singleLine="true"
+            android:textColor="@android:color/black"
+            android:textColorHint="@android:color/black"
+            android:textSize="15dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/send_btn"
+                    android:layout_width="70dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="发送"
+                    android:textSize="16dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
     </LinearLayout>
+
 </FrameLayout>

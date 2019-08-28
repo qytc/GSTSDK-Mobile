@@ -1,6 +1,8 @@
 package io.qytc.gst.sdk;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -46,19 +48,16 @@ import io.qytc.gst.view.TRTCVideoViewLayout;
 public class RoomActivity extends Activity implements View.OnClickListener, SettingDialog.ISettingListener, MoreDialog.IMoreListener, TRTCVideoViewLayout.ITRTCVideoViewLayoutListener, BeautySettingPanel.IOnBeautyParamsChangeListener {
     private final static String TAG = RoomActivity.class.getSimpleName();
 
-    private boolean bBeautyEnable = true, bEnableVideo = true, bEnableAudio = true, beingLinkMic = false;
-    private int    iDebugLevel      = 0;
-    private String mUserIdBeingLink = "";
-    private String mRoomIdBeingLink = "";
+    private boolean bBeautyEnable = true, bEnableVideo = true, bEnableAudio = true, beingLinkMic = false, bEanbleSendMsg = false;
+    private int iDebugLevel = 0;
 
-    private TextView tvRoomId;
-    private EditText etRoomId, etUserId;
+    private TextView  tvRoomId;
     private ImageView ivBeauty, ivCamera, ivVoice, ivLog;
-    private SettingDialog       settingDlg;
-    private MoreDialog          moreDlg;
-    private TRTCVideoViewLayout mVideoViewLayout;
-    private BeautySettingPanel  mBeautyPannelView;
-
+    private SettingDialog           settingDlg;
+    private MoreDialog              moreDlg;
+    private TRTCVideoViewLayout     mVideoViewLayout;
+    private BeautySettingPanel      mBeautyPannelView;
+    private AlertDialog             exitDialog;
     private TRTCCloudDef.TRTCParams trtcParams;     /// TRTC SDK 视频通话房间进入所必须的参数
     private TRTCCloud               trtcCloud;              /// TRTC SDK 实例对象
     private TRTCCloudListenerImpl   trtcListener;    /// TRTC SDK 回调监听
@@ -92,6 +91,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        setContentView(R.layout.room_activity);
 
         //获取前一个页面得到的进房参数
         Intent intent = getIntent();
@@ -103,7 +103,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         trtcParams = new TRTCCloudDef.TRTCParams(mSdkAppId, selfUserId, userSig, roomId, "", "");
         trtcParams.role = intent.getIntExtra("role", TRTCCloudDef.TRTCRoleAnchor);
 
-        mAppScene = intent.getIntExtra("AppScene", TRTCCloudDef.TRTC_APP_SCENE_LIVE);
+        mAppScene = intent.getIntExtra("AppScene", mAppScene);
 
         //初始化 UI 控件
         initView();
@@ -113,42 +113,29 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         trtcCloud = TRTCCloud.sharedInstance(this);
         trtcCloud.setListener(trtcListener);
 
-        if (BuildConfig.DEBUG) {
-            findViewById(R.id.msgTest).setVisibility(View.VISIBLE);
-            findViewById(R.id.send_btn).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    EditText msgId_et = findViewById(R.id.msgId_et);
-                    EditText msg_et = findViewById(R.id.value_et);
-                    Integer msgId = Integer.valueOf(msgId_et.getText().toString());
-                    String msg = msg_et.getText().toString();
-                    trtcCloud.sendCustomCmdMsg(msgId, msg.getBytes(), true, true);
-                }
-            });
-        }
-
         //开始进入视频通话房间
         enterRoom();
     }
 
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (exitDialog.isShowing()) {
+            exitDialog.dismiss();
+        }
         trtcCloud.setListener(null);
         TRTCCloud.destroySharedInstance();
     }
 
     @Override
     public void onBackPressed() {
-        exitRoom();
+        exitDialog.show();
     }
 
     /**
      * 初始化界面控件，包括主要的视频显示View，以及底部的一排功能按钮
      */
     private void initView() {
-        setContentView(R.layout.main_activity);
 
         initClickableLayout(R.id.ll_beauty);
         initClickableLayout(R.id.ll_camera);
@@ -156,6 +143,10 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         initClickableLayout(R.id.ll_log);
         initClickableLayout(R.id.ll_role);
         initClickableLayout(R.id.ll_more);
+
+        if (BuildConfig.DEBUG) {
+            findViewById(R.id.ll_log).setVisibility(View.VISIBLE);
+        }
 
         mVideoViewLayout = findViewById(R.id.ll_mainview);
         mVideoViewLayout.setUserId(trtcParams.userId);
@@ -176,13 +167,15 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         findViewById(R.id.rtc_double_room_back_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                exitRoom();
+                exitDialog.show();
             }
         });
 
         //美颜p图部分
         mBeautyPannelView = findViewById(R.id.layoutFaceBeauty);
         mBeautyPannelView.setBeautyParamsChangeListener(this);
+
+        exitAlertDialog();
     }
 
     private LinearLayout initClickableLayout(int resId) {
@@ -284,7 +277,8 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         } else if (v.getId() == R.id.ll_voice) {
             onEnableAudio();
         } else if (v.getId() == R.id.ll_log) {
-            onChangeLogStatus();
+//            onChangeLogStatus();
+            onChangeSendMsgStatus();
         } else if (v.getId() == R.id.ll_role) {
             onShowSettingDlg();
         } else if (v.getId() == R.id.ll_more) {
@@ -292,6 +286,27 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         }
     }
 
+    private void showSendMsgLayout() {
+        findViewById(R.id.sendMsg_layout).setVisibility(View.VISIBLE);
+        findViewById(R.id.send_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                EditText msgId_et = findViewById(R.id.msgId_et);
+                EditText msg_et = findViewById(R.id.value_et);
+                Integer msgId = Integer.valueOf(msgId_et.getText().toString());
+                String msg = msg_et.getText().toString();
+                if (msgId == 9) {
+                    String[] userIds = msg.split(",");
+                    swapViewByIndex(userIds);
+                }
+                trtcCloud.sendCustomCmdMsg(msgId, msg.getBytes(), true, true);
+            }
+        });
+    }
+
+    private void hideSendMsgLayout() {
+        findViewById(R.id.sendMsg_layout).setVisibility(View.GONE);
+    }
 
     /**
      * 点击开启或关闭美颜
@@ -350,6 +365,16 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         ivLog.setImageResource((0 == iDebugLevel) ? R.mipmap.log2 : R.mipmap.log);
 
         trtcCloud.showDebugView(iDebugLevel);
+    }
+
+    private void onChangeSendMsgStatus() {
+        bEanbleSendMsg = !bEanbleSendMsg;
+        ivLog.setImageResource(bEanbleSendMsg ? R.mipmap.log : R.mipmap.log2);
+        if (bEanbleSendMsg) {
+            showSendMsgLayout();
+        } else {
+            hideSendMsgLayout();
+        }
     }
 
     /**
@@ -489,7 +514,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
             }
 
             if (errCode == TXLiteAVCode.ERR_SERVER_INFO_SERVICE_SUSPENDED) {
-                Toast.makeText(activity, "进房失败，请确认腾讯云实时音视频账号状态是否欠费:" + errCode + "[" + errMsg + "]", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "进房失败，请确认账号状态是否欠费:" + errCode + "[" + errMsg + "]", Toast.LENGTH_SHORT).show();
                 activity.exitRoom();
                 return;
             }
@@ -682,13 +707,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
 
         @Override
         public void onDisConnectOtherRoom(final int err, final String errMsg) {
-            RoomActivity activity = mContext.get();
-            if (activity != null) {
-                activity.mUserIdBeingLink = "";
-                activity.mRoomIdBeingLink = "";
-                activity.beingLinkMic = false;
-                activity.moreDlg.updateLinkMicState(false);
-            }
+
         }
 
         @Override
@@ -709,8 +728,11 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
                 return;
             }
             String msg = new String(message);
-            String targetUserId = msg.split(",")[1];
-
+            String[] msgTxt = msg.split(",");
+            String targetUserId = null;
+            if (msgTxt.length > 0) {
+                targetUserId = msgTxt[0];
+            }
             switch (cmdID) {
                 case 2://主席端打开/关闭指定会场麦克风
                     //1:打开 0:关闭
@@ -782,10 +804,10 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
 
                     break;
                 case 9://广播多画面
-
+                    String[] userIds = msg.split(",");
+                    activity.swapViewByIndex(userIds);
                     break;
             }
-
         }
     }
 
@@ -1161,9 +1183,6 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
             int index = 0;
             for (VideoStream userStream : mVideosInRoom) {
                 TRTCCloudDef.TRTCMixUser audience = new TRTCCloudDef.TRTCMixUser();
-                if (beingLinkMic && userStream.userId.equalsIgnoreCase(mUserIdBeingLink)) {
-                    audience.roomId = mRoomIdBeingLink;
-                }
 
                 audience.userId = userStream.userId;
                 audience.streamType = userStream.streamType;
@@ -1230,5 +1249,29 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         } else {
             trtcCloud.stopLocalPreview();
         }
+    }
+
+    private void swapViewByIndex(String[] userIds) {
+        for (int i = 0; i < userIds.length; i++) {
+            int src = mVideoViewLayout.getCloudVideoViewIndex(userIds[i]);
+            if (src >= 0) {
+                mVideoViewLayout.swapViewByIndex(i, src);
+            }
+        }
+    }
+
+    private void exitAlertDialog() {
+        AlertDialog.Builder mAlertDialog = new AlertDialog.Builder(this, R.style.Theme_AppCompat_Light_Dialog_Alert);
+        mAlertDialog.setTitle("请确认");
+        mAlertDialog.setMessage("确定要退出会议吗？");
+        mAlertDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                exitDialog.dismiss();
+                exitRoom();
+            }
+        });
+        mAlertDialog.setNegativeButton("取消", null);
+        exitDialog = mAlertDialog.create();
     }
 }

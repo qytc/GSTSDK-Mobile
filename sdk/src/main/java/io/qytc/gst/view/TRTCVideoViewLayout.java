@@ -29,22 +29,26 @@ import io.qytc.gst.sdk.R;
 
 /**
  * Module:   TRTCVideoViewLayout
- *
+ * <p>
  * Function: 用于计算每个视频画面的位置排布和大小尺寸
- *
  */
 public class TRTCVideoViewLayout extends RelativeLayout {
-    private final static String                                 TAG        = TRTCVideoViewLayout.class.getSimpleName();
-    public static final  int                                    MODE_FLOAT = 1;  // 前后堆叠模式
-    public static final  int                                    MODE_GRID  = 2;  // 九宫格模式
-    public static final  int                                    MAX_USER   = 4;
-    private              Context                                mContext;
-    private              ArrayList<TXCloudVideoView>            mVideoViewList;
-    private              ArrayList<RelativeLayout.LayoutParams> mFloatParamList;
-    private              ArrayList<LayoutParams>                mGrid4ParamList;
-    private              RelativeLayout                         mLayout;
-    private              int                                    mCount     = 0;
-    private              int                                    mMode;
+    private final static String  TAG        = TRTCVideoViewLayout.class.getSimpleName();
+    public static final  int     MODE_FLOAT = 1;  // 前后堆叠模式
+    public static final  int     MODE_GRID  = 2;  // 九宫格模式
+    public static final  int     MAX_USER   = 4;
+    private              Context mContext;
+
+    public ArrayList<TXCloudVideoView> getVideoViewList() {
+        return mVideoViewList;
+    }
+
+    private ArrayList<TXCloudVideoView>            mVideoViewList;
+    private ArrayList<RelativeLayout.LayoutParams> mFloatParamList;
+    private ArrayList<LayoutParams>                mGrid4ParamList;
+    private RelativeLayout                         mLayout;
+    private int                                    mCount = 0;
+    private int                                    mMode;
 
     private String                                      mSelfUserId;
     private WeakReference<ITRTCVideoViewLayoutListener> mListener = new WeakReference<>(null);
@@ -87,18 +91,17 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         mContext = context;
         LayoutInflater.from(context).inflate(R.layout.room_show_view, this);
         mLayout = findViewById(R.id.ll_mainview);
-//        initFloatLayoutParams();
         initTXCloudVideoView();
         initGridLayoutParams();
         showView();
 
         mapNetworkQuality = new HashMap<>();
-        mapNetworkQuality.put(Integer.valueOf(TRTCCloudDef.TRTC_QUALITY_Down), Integer.valueOf(R.mipmap.signal1));
-        mapNetworkQuality.put(Integer.valueOf(TRTCCloudDef.TRTC_QUALITY_Vbad), Integer.valueOf(R.mipmap.signal2));
-        mapNetworkQuality.put(Integer.valueOf(TRTCCloudDef.TRTC_QUALITY_Bad), Integer.valueOf(R.mipmap.signal3));
-        mapNetworkQuality.put(Integer.valueOf(TRTCCloudDef.TRTC_QUALITY_Poor), Integer.valueOf(R.mipmap.signal4));
-        mapNetworkQuality.put(Integer.valueOf(TRTCCloudDef.TRTC_QUALITY_Good), Integer.valueOf(R.mipmap.signal5));
-        mapNetworkQuality.put(Integer.valueOf(TRTCCloudDef.TRTC_QUALITY_Excellent), Integer.valueOf(R.mipmap.signal6));
+        mapNetworkQuality.put(TRTCCloudDef.TRTC_QUALITY_Down, R.mipmap.signal1);
+        mapNetworkQuality.put(TRTCCloudDef.TRTC_QUALITY_Vbad, R.mipmap.signal2);
+        mapNetworkQuality.put(TRTCCloudDef.TRTC_QUALITY_Bad, R.mipmap.signal3);
+        mapNetworkQuality.put(TRTCCloudDef.TRTC_QUALITY_Poor, R.mipmap.signal4);
+        mapNetworkQuality.put(TRTCCloudDef.TRTC_QUALITY_Good, R.mipmap.signal5);
+        mapNetworkQuality.put(TRTCCloudDef.TRTC_QUALITY_Excellent, R.mipmap.signal6);
 
         mMode = MODE_GRID;
     }
@@ -135,6 +138,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         }
         return null;
     }
+
     private void initGrid4Param(int statusH, int screenW, int screenH, int bottomMargin, int margin) {
         int grid4W = (screenW - margin * 2) / 2;
         int grid4H = (screenH - statusH - margin * 2 - bottomMargin) / 2;
@@ -221,6 +225,15 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         return null;
     }
 
+    public int getCloudVideoViewIndex(String userId) {
+        for (int i = 0; i < mVideoViewList.size(); i++) {
+            if (mVideoViewList.get(i).getUserId().contains(userId) && !userId.isEmpty()) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public void updateLayoutGrid() {
         for (int i = 0; i < mVideoViewList.size(); i++) {
             TXCloudVideoView cloudVideoView = mVideoViewList.get(i);
@@ -249,6 +262,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
             }
         }
     }
+
 
     public void swapViewByIndex(int src, int dst) {
         TXLog.i(TAG, "swapViewByIndex src:" + src + ",dst:" + dst);
@@ -646,4 +660,5 @@ public class TRTCVideoViewLayout extends RelativeLayout {
             }
         }
     }
+
 }
