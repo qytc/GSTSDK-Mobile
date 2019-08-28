@@ -18,32 +18,32 @@ import java.lang.ref.WeakReference;
 import io.qytc.gst.sdk.R;
 
 public class MoreDialog extends Dialog implements View.OnClickListener {
-    private final static String TAG                                     = "MoreDialog";
+    private final static String TAG = "MoreDialog";
 
-    private final static String KEY_MORE_SETTING_DATA                   = "KEY_MORE_SETTING_DATA";
+    private final static String KEY_MORE_SETTING_DATA = "KEY_MORE_SETTING_DATA";
 
-    private final static String KEY_CAMERA_FRONT                        = "KEY_CAMERA_FRONT";
-    private final static String KEY_VIDEO_FILL_MODE                     = "KEY_VIDEO_FILL_MODE";
-    private final static String KEY_VIDEO_VERTICAL                      = "KEY_VIDEO_VERTICAL";
-    private final static String KEY_ENABLE_AUDIO_CAPTURE                = "KEY_ENABLE_AUDIO_CAPTURE";
-    private final static String KEY_AUDIO_HAND_FREE_MODE                = "KEY_AUDIO_HAND_FREE_MODE";
-    private final static String KEY_LOCAL_VIDEO_MIRROR                  = "KEY_LOCAL_VIDEO_MIRROR";
-    private final static String KEY_REMOTE_VIDEO_MIRROR                 = "KEY_REMOTE_VIDEO_MIRROR";
-    private final static String KEY_ENABLE_GSENSOR_MODE                 = "KEY_ENABLE_GSENSOR_MODE";
-    private final static String KEY_AUDIO_VOLUME_EVALUATION             = "KEY_ENABLE_VOLUME_EVALUATION";
-    private final static String KEY_ENABLE_CLOUD_MIXTURE                = "KEY_ENABLE_CLOUD_MIXTURE";
+    private final static String KEY_CAMERA_FRONT            = "KEY_CAMERA_FRONT";
+    private final static String KEY_VIDEO_FILL_MODE         = "KEY_VIDEO_FILL_MODE";
+    private final static String KEY_VIDEO_VERTICAL          = "KEY_VIDEO_VERTICAL";
+    private final static String KEY_ENABLE_AUDIO_CAPTURE    = "KEY_ENABLE_AUDIO_CAPTURE";
+    private final static String KEY_AUDIO_HAND_FREE_MODE    = "KEY_AUDIO_HAND_FREE_MODE";
+    private final static String KEY_LOCAL_VIDEO_MIRROR      = "KEY_LOCAL_VIDEO_MIRROR";
+    private final static String KEY_REMOTE_VIDEO_MIRROR     = "KEY_REMOTE_VIDEO_MIRROR";
+    private final static String KEY_ENABLE_GSENSOR_MODE     = "KEY_ENABLE_GSENSOR_MODE";
+    private final static String KEY_AUDIO_VOLUME_EVALUATION = "KEY_ENABLE_VOLUME_EVALUATION";
+    private final static String KEY_ENABLE_CLOUD_MIXTURE    = "KEY_ENABLE_CLOUD_MIXTURE";
 
-    private boolean mCameraFront                                        = true;
-    private boolean mVideoFillMode                                      = true;
-    private boolean mVideoVertical                                      = false;
-    private boolean mEnableAudioCapture                                 = true;
-    private boolean mAudioHandFreeMode                                  = true;
-    private boolean mEnableGSensorMode                                  = true;
-    private boolean mAudioVolumeEvaluation                              = true;
-    private boolean mEnableCloudMixture                                 = true;
-    private boolean mEnableVideoEncMirror                               = false;
-    private int     mLocalVideoViewMirror                               = TRTCCloudDef.TRTC_VIDEO_MIRROR_TYPE_AUTO;
-    private int     mRole                                               = TRTCCloudDef.TRTCRoleAnchor;
+    private boolean mCameraFront           = true;
+    private boolean mVideoFillMode         = true;
+    private boolean mVideoVertical         = false;
+    private boolean mEnableAudioCapture    = true;
+    private boolean mAudioHandFreeMode     = true;
+    private boolean mEnableGSensorMode     = true;
+    private boolean mAudioVolumeEvaluation = true;
+    private boolean mEnableCloudMixture    = true;
+    private boolean mEnableVideoEncMirror  = false;
+    private int     mLocalVideoViewMirror  = TRTCCloudDef.TRTC_VIDEO_MIRROR_TYPE_AUTO;
+    private int     mRole                  = TRTCCloudDef.TRTCRoleAnchor;
 
     private RadioButton mRbCameraFront;
     private RadioButton mRbCameraBack;
@@ -56,27 +56,39 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
     private RadioButton mRbRoleAnchor;
     private RadioButton mRbRoleAudience;
 
-    private CheckBox    mCbEnableAudio;
-    private CheckBox    mCbAudioHandFree;
-    private CheckBox    mCbVideoEncMirror;
-    private CheckBox    mCbEnableGSensor;
-    private CheckBox    mCbAudioVolumeEvaluation;
-    private CheckBox    mCbEnableCloudMixture;
+    private CheckBox mCbEnableAudio;
+    private CheckBox mCbAudioHandFree;
+    private CheckBox mCbVideoEncMirror;
+    private CheckBox mCbEnableGSensor;
+    private CheckBox mCbAudioVolumeEvaluation;
+    private CheckBox mCbEnableCloudMixture;
 
 
     public interface IMoreListener {
         void onSwitchCamera(boolean bFrontCamera);
+
         void onFillModeChange(boolean bFillMode);
+
         void onVideoRotationChange(boolean bVertical);
+
         void onEnableAudioCapture(boolean bEnable);
+
         void onEnableAudioHandFree(boolean bEnable);
+
         void onMirrorLocalVideo(int mirrorType);
+
         void onMirrorRemoteVideo(boolean bMirror);
+
         void onEnableGSensor(boolean bEnable);
+
         void onEnableAudioVolumeEvaluation(boolean bEnable);
+
         void onEnableCloudMixture(boolean bEnable);
+
         void onClickButtonGetPlayUrl();
+
         void onClickButtonLinkMic();
+
         void onChangeRole(int role);
     }
 
@@ -98,23 +110,23 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
     }
 
     private void initView() {
-        mRbCameraFront           = (RadioButton)findViewById(R.id.camera_front);
-        mRbCameraBack            = (RadioButton)findViewById(R.id.camera_back);
-        mRbVideoFill             = (RadioButton)findViewById(R.id.mode_fill);
-        mRbVideoAdjust           = (RadioButton)findViewById(R.id.mode_adjust);
-        mRbVideoVertical         = (RadioButton)findViewById(R.id.mode_vertical);
-        mRbVideoHorizontal       = (RadioButton)findViewById(R.id.mode_horizontal);
-        mRbLocalVideoMirrorAuto  = (RadioButton)findViewById(R.id.mirror_auto);
-        mRbLocalVideoMirrorDisable = (RadioButton)findViewById(R.id.mirror_disable);
-        mRbRoleAnchor               = (RadioButton)findViewById(R.id.role_anchor);
-        mRbRoleAudience             = (RadioButton)findViewById(R.id.role_audience);
+        mRbCameraFront = findViewById(R.id.camera_front);
+        mRbCameraBack = findViewById(R.id.camera_back);
+        mRbVideoFill = findViewById(R.id.mode_fill);
+        mRbVideoAdjust = findViewById(R.id.mode_adjust);
+        mRbVideoVertical = findViewById(R.id.mode_vertical);
+        mRbVideoHorizontal = findViewById(R.id.mode_horizontal);
+        mRbLocalVideoMirrorAuto = findViewById(R.id.mirror_auto);
+        mRbLocalVideoMirrorDisable = findViewById(R.id.mirror_disable);
+        mRbRoleAnchor = findViewById(R.id.role_anchor);
+        mRbRoleAudience = findViewById(R.id.role_audience);
 
-        mCbEnableAudio           = (CheckBox)findViewById(R.id.enable_audio);
-        mCbAudioHandFree         = (CheckBox)findViewById(R.id.audio_handfree);
-        mCbVideoEncMirror        = (CheckBox)findViewById(R.id.video_enc_mirror);
-        mCbEnableGSensor         = (CheckBox)findViewById(R.id.enable_gsensor);
-        mCbAudioVolumeEvaluation = (CheckBox)findViewById(R.id.enable_audio_volume_evaluation);
-        mCbEnableCloudMixture    = (CheckBox)findViewById(R.id.enable_cloud_mixture);
+        mCbEnableAudio = findViewById(R.id.enable_audio);
+        mCbAudioHandFree = findViewById(R.id.audio_handfree);
+        mCbVideoEncMirror = findViewById(R.id.video_enc_mirror);
+        mCbEnableGSensor = findViewById(R.id.enable_gsensor);
+        mCbAudioVolumeEvaluation = findViewById(R.id.enable_audio_volume_evaluation);
+        mCbEnableCloudMixture = findViewById(R.id.enable_cloud_mixture);
 
         mRbCameraFront.setChecked(mCameraFront);
         mRbCameraBack.setChecked(!mCameraFront);
@@ -154,6 +166,7 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
         mCbEnableCloudMixture.setOnClickListener(this);
         findViewById(R.id.btn_get_playurl).setOnClickListener(this);
         findViewById(R.id.btn_linkmic).setOnClickListener(this);
+        findViewById(R.id.more_submit).setOnClickListener(this);
     }
 
 
@@ -205,19 +218,18 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
         try {
             SharedPreferences shareInfo = context.getSharedPreferences(KEY_MORE_SETTING_DATA, 0);
 
-            mCameraFront            = shareInfo.getBoolean(KEY_CAMERA_FRONT,            mCameraFront);
-            mVideoFillMode          = shareInfo.getBoolean(KEY_VIDEO_FILL_MODE,         mVideoFillMode);
-            mVideoVertical          = shareInfo.getBoolean(KEY_VIDEO_VERTICAL,          mVideoVertical);
-            mEnableAudioCapture     = shareInfo.getBoolean(KEY_ENABLE_AUDIO_CAPTURE,    mEnableAudioCapture);
-            mAudioHandFreeMode      = shareInfo.getBoolean(KEY_AUDIO_HAND_FREE_MODE,    mAudioHandFreeMode);
-            mLocalVideoViewMirror   = shareInfo.getInt(KEY_LOCAL_VIDEO_MIRROR,          mLocalVideoViewMirror);
-            mEnableVideoEncMirror   = shareInfo.getBoolean(KEY_REMOTE_VIDEO_MIRROR,     mEnableVideoEncMirror);
-            mEnableGSensorMode      = shareInfo.getBoolean(KEY_ENABLE_GSENSOR_MODE,     mEnableGSensorMode);
-            mAudioVolumeEvaluation  = shareInfo.getBoolean(KEY_AUDIO_VOLUME_EVALUATION, mAudioVolumeEvaluation);
-            mEnableCloudMixture     = shareInfo.getBoolean(KEY_ENABLE_CLOUD_MIXTURE,    mEnableCloudMixture);
+            mCameraFront = shareInfo.getBoolean(KEY_CAMERA_FRONT, mCameraFront);
+            mVideoFillMode = shareInfo.getBoolean(KEY_VIDEO_FILL_MODE, mVideoFillMode);
+            mVideoVertical = shareInfo.getBoolean(KEY_VIDEO_VERTICAL, mVideoVertical);
+            mEnableAudioCapture = shareInfo.getBoolean(KEY_ENABLE_AUDIO_CAPTURE, mEnableAudioCapture);
+            mAudioHandFreeMode = shareInfo.getBoolean(KEY_AUDIO_HAND_FREE_MODE, mAudioHandFreeMode);
+            mLocalVideoViewMirror = shareInfo.getInt(KEY_LOCAL_VIDEO_MIRROR, mLocalVideoViewMirror);
+            mEnableVideoEncMirror = shareInfo.getBoolean(KEY_REMOTE_VIDEO_MIRROR, mEnableVideoEncMirror);
+            mEnableGSensorMode = shareInfo.getBoolean(KEY_ENABLE_GSENSOR_MODE, mEnableGSensorMode);
+            mAudioVolumeEvaluation = shareInfo.getBoolean(KEY_AUDIO_VOLUME_EVALUATION, mAudioVolumeEvaluation);
+            mEnableCloudMixture = shareInfo.getBoolean(KEY_ENABLE_CLOUD_MIXTURE, mEnableCloudMixture);
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -226,20 +238,19 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
         try {
             SharedPreferences shareInfo = context.getSharedPreferences(KEY_MORE_SETTING_DATA, 0);
             SharedPreferences.Editor editor = shareInfo.edit();
-            editor.putBoolean(KEY_CAMERA_FRONT,            mCameraFront);
-            editor.putBoolean(KEY_VIDEO_FILL_MODE,         mVideoFillMode);
-            editor.putBoolean(KEY_VIDEO_VERTICAL,          mVideoVertical);
-            editor.putBoolean(KEY_ENABLE_AUDIO_CAPTURE,    mEnableAudioCapture);
-            editor.putBoolean(KEY_AUDIO_HAND_FREE_MODE,    mAudioHandFreeMode);
-            editor.putInt(KEY_LOCAL_VIDEO_MIRROR,          mLocalVideoViewMirror);
-            editor.putBoolean(KEY_REMOTE_VIDEO_MIRROR,     mEnableVideoEncMirror);
-            editor.putBoolean(KEY_ENABLE_GSENSOR_MODE,     mEnableGSensorMode);
+            editor.putBoolean(KEY_CAMERA_FRONT, mCameraFront);
+            editor.putBoolean(KEY_VIDEO_FILL_MODE, mVideoFillMode);
+            editor.putBoolean(KEY_VIDEO_VERTICAL, mVideoVertical);
+            editor.putBoolean(KEY_ENABLE_AUDIO_CAPTURE, mEnableAudioCapture);
+            editor.putBoolean(KEY_AUDIO_HAND_FREE_MODE, mAudioHandFreeMode);
+            editor.putInt(KEY_LOCAL_VIDEO_MIRROR, mLocalVideoViewMirror);
+            editor.putBoolean(KEY_REMOTE_VIDEO_MIRROR, mEnableVideoEncMirror);
+            editor.putBoolean(KEY_ENABLE_GSENSOR_MODE, mEnableGSensorMode);
             editor.putBoolean(KEY_AUDIO_VOLUME_EVALUATION, mAudioVolumeEvaluation);
-            editor.putBoolean(KEY_ENABLE_CLOUD_MIXTURE,    mEnableCloudMixture);
+            editor.putBoolean(KEY_ENABLE_CLOUD_MIXTURE, mEnableCloudMixture);
 
             editor.commit();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -257,7 +268,8 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
                     listener.onSwitchCamera(mCameraFront);
                 }
             }
-        } else if (id == R.id.mode_fill || id == R.id.mode_adjust) {
+        }
+        else if (id == R.id.mode_fill || id == R.id.mode_adjust) {
             boolean videoFillMode = (id == R.id.mode_fill);
             if (videoFillMode != mVideoFillMode) {
                 mVideoFillMode = videoFillMode;
@@ -265,7 +277,8 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
                     listener.onFillModeChange(mVideoFillMode);
                 }
             }
-        } else if (id == R.id.mode_vertical || id == R.id.mode_horizontal) {
+        }
+        else if (id == R.id.mode_vertical || id == R.id.mode_horizontal) {
             boolean videoVertical = (id == R.id.mode_vertical);
             if (videoVertical != mVideoVertical) {
                 mVideoVertical = videoVertical;
@@ -273,7 +286,8 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
                     listener.onVideoRotationChange(mVideoVertical);
                 }
             }
-        } else if (id == R.id.enable_audio) {
+        }
+        else if (id == R.id.enable_audio) {
             boolean enableAudioCapture = mCbEnableAudio.isChecked();
             if (enableAudioCapture != mEnableAudioCapture) {
                 mEnableAudioCapture = enableAudioCapture;
@@ -281,7 +295,8 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
                     listener.onEnableAudioCapture(mEnableAudioCapture);
                 }
             }
-        } else if (id == R.id.audio_handfree) {
+        }
+        else if (id == R.id.audio_handfree) {
             boolean audioHandFreeMode = mCbAudioHandFree.isChecked();
             if (audioHandFreeMode != mAudioHandFreeMode) {
                 mAudioHandFreeMode = audioHandFreeMode;
@@ -289,11 +304,13 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
                     listener.onEnableAudioHandFree(mAudioHandFreeMode);
                 }
             }
-        } else if (id == R.id.mirror_auto || id == R.id.mirror_disable) {
+        }
+        else if (id == R.id.mirror_auto || id == R.id.mirror_disable) {
             int mirrorType = TRTCCloudDef.TRTC_VIDEO_MIRROR_TYPE_AUTO;
             if (id == R.id.mirror_auto) {
                 mirrorType = TRTCCloudDef.TRTC_VIDEO_MIRROR_TYPE_AUTO;
-            } else if (id == R.id.mirror_disable) {
+            }
+            else if (id == R.id.mirror_disable) {
                 mirrorType = TRTCCloudDef.TRTC_VIDEO_MIRROR_TYPE_DISABLE;
             }
             if (mirrorType != mLocalVideoViewMirror) {
@@ -302,7 +319,8 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
                     listener.onMirrorLocalVideo(mLocalVideoViewMirror);
                 }
             }
-        } else if (id == R.id.video_enc_mirror) {
+        }
+        else if (id == R.id.video_enc_mirror) {
             boolean remoteVideoMirror = mCbVideoEncMirror.isChecked();
             if (remoteVideoMirror != mEnableVideoEncMirror) {
                 mEnableVideoEncMirror = remoteVideoMirror;
@@ -310,7 +328,8 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
                     listener.onMirrorRemoteVideo(mEnableVideoEncMirror);
                 }
             }
-        } else if (id == R.id.enable_gsensor) {
+        }
+        else if (id == R.id.enable_gsensor) {
             boolean enableGSensorMode = mCbEnableGSensor.isChecked();
             if (enableGSensorMode != mEnableGSensorMode) {
                 mEnableGSensorMode = enableGSensorMode;
@@ -318,7 +337,8 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
                     listener.onEnableGSensor(mEnableGSensorMode);
                 }
             }
-        } else if (id == R.id.enable_audio_volume_evaluation) {
+        }
+        else if (id == R.id.enable_audio_volume_evaluation) {
             boolean audioVolumeEvaluation = mCbAudioVolumeEvaluation.isChecked();
             if (audioVolumeEvaluation != mAudioVolumeEvaluation) {
                 mAudioVolumeEvaluation = audioVolumeEvaluation;
@@ -326,7 +346,8 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
                     listener.onEnableAudioVolumeEvaluation(mAudioVolumeEvaluation);
                 }
             }
-        } else if (id == R.id.enable_cloud_mixture) {
+        }
+        else if (id == R.id.enable_cloud_mixture) {
             boolean enableCloudMixture = mCbEnableCloudMixture.isChecked();
             if (enableCloudMixture != mEnableCloudMixture) {
                 mEnableCloudMixture = enableCloudMixture;
@@ -334,46 +355,39 @@ public class MoreDialog extends Dialog implements View.OnClickListener {
                     listener.onEnableCloudMixture(mEnableCloudMixture);
                 }
             }
-        } else if (id == R.id.btn_get_playurl) {
+        }
+        else if (id == R.id.btn_get_playurl) {
             if (listener != null) {
                 listener.onClickButtonGetPlayUrl();
             }
-        } else if (id == R.id.btn_linkmic) {
+        }
+        else if (id == R.id.btn_linkmic) {
             if (listener != null) {
                 listener.onClickButtonLinkMic();
             }
             dismiss();
-        } else if (id == R.id.role_anchor) {
+        }
+        else if (id == R.id.role_anchor) {
             if (listener != null) {
                 listener.onChangeRole(TRTCCloudDef.TRTCRoleAnchor);
             }
             mRole = TRTCCloudDef.TRTCRoleAnchor;
-        } else if (id == R.id.role_audience) {
+        }
+        else if (id == R.id.role_audience) {
             if (listener != null) {
                 listener.onChangeRole(TRTCCloudDef.TRTCRoleAudience);
             }
             mRole = TRTCCloudDef.TRTCRoleAudience;
         }
-
-        saveData(getContext());
+        else if(id== R.id.more_submit){
+            saveData(getContext());
+            this.dismiss();
+        }
     }
 
-    public void show(boolean beingLinkMic, int appScene) {
+    public void show(int appScene) {
         show();
-        updateLinkMicState(beingLinkMic);
-        updateAppScene(appScene);
-    }
-
-    public void updateLinkMicState(boolean beingLinkMic) {
-        TextView textView = (TextView)findViewById(R.id.text_linkmic);
-        if (textView != null) {
-            textView.setText(beingLinkMic ? "结束跨房连麦" : "开始跨房连麦");
-        }
-
-        Button button = (Button)findViewById(R.id.btn_linkmic);
-        if (button != null) {
-            button.setText(beingLinkMic ? "结束" : "开始");
-        }
+//        updateAppScene(appScene);
     }
 
     public void updateVideoFillMode(boolean bFillMode) {

@@ -230,7 +230,7 @@ public class SettingDialog extends Dialog {
                         SharedPreferences shareInfo = getContext().getSharedPreferences(PER_DATA, 0);
                         SharedPreferences.Editor editor = shareInfo.edit();
                         editor.putBoolean(PER_SAVEFLAG, saveFlag);
-                        editor.commit();
+                        editor.apply();
                     } catch (Exception e) {
 
                     }

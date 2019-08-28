@@ -48,24 +48,26 @@ import io.qytc.gst.view.TRTCVideoViewLayout;
 public class RoomActivity extends Activity implements View.OnClickListener, SettingDialog.ISettingListener, MoreDialog.IMoreListener, TRTCVideoViewLayout.ITRTCVideoViewLayoutListener, BeautySettingPanel.IOnBeautyParamsChangeListener {
     private final static String TAG = RoomActivity.class.getSimpleName();
 
-    private boolean bBeautyEnable = true, bEnableVideo = true, bEnableAudio = true, beingLinkMic = false, bEanbleSendMsg = false;
+    private boolean bEnableVideo = true;
+    private boolean bEnableAudio   = true;
+    private boolean bEanbleSendMsg = false;
     private int iDebugLevel = 0;
 
     private TextView  tvRoomId;
-    private ImageView ivBeauty, ivCamera, ivVoice, ivLog;
+    private ImageView ivCamera, ivVoice, ivLog;
     private SettingDialog           settingDlg;
     private MoreDialog              moreDlg;
     private TRTCVideoViewLayout     mVideoViewLayout;
-    private BeautySettingPanel      mBeautyPannelView;
+
     private AlertDialog             exitDialog;
     private TRTCCloudDef.TRTCParams trtcParams;     /// TRTC SDK 视频通话房间进入所必须的参数
     private TRTCCloud               trtcCloud;              /// TRTC SDK 实例对象
     private TRTCCloudListenerImpl   trtcListener;    /// TRTC SDK 回调监听
 
-    private int    mBeautyLevel    = 5;
-    private int    mWhiteningLevel = 3;
-    private int    mRuddyLevel     = 2;
-    private int    mBeautyStyle    = TRTCCloudDef.TRTC_BEAUTY_STYLE_SMOOTH;
+    private int    mBeautyLevel    = 0;
+    private int    mWhiteningLevel = 0;
+    private int    mRuddyLevel     = 0;
+    private int    mBeautyStyle    = TRTCCloudDef.TRTC_BEAUTY_STYLE_NATURE;
     private int    mSdkAppId       = -1;
     private int    mAppScene       = TRTCCloudDef.TRTC_APP_SCENE_LIVE;
     private String selfUserId      = null;
@@ -137,7 +139,6 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
      */
     private void initView() {
 
-        initClickableLayout(R.id.ll_beauty);
         initClickableLayout(R.id.ll_camera);
         initClickableLayout(R.id.ll_voice);
         initClickableLayout(R.id.ll_log);
@@ -152,8 +153,6 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         mVideoViewLayout.setUserId(trtcParams.userId);
         mVideoViewLayout.setListener(this);
 
-
-        ivBeauty = findViewById(R.id.iv_beauty);
         ivLog = findViewById(R.id.iv_log);
         ivVoice = findViewById(R.id.iv_mic);
         ivCamera = findViewById(R.id.iv_camera);
@@ -162,8 +161,9 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         tvRoomId.setText("会议室号：" + trtcParams.roomId);
 
         settingDlg = new SettingDialog(this, this, mAppScene);
-        settingDlg.setCancelable(true);
+
         moreDlg = new MoreDialog(this, this);
+
         findViewById(R.id.rtc_double_room_back_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -171,11 +171,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
             }
         });
 
-        //美颜p图部分
-        mBeautyPannelView = findViewById(R.id.layoutFaceBeauty);
-        mBeautyPannelView.setBeautyParamsChangeListener(this);
-
-        exitAlertDialog();
+        initAlertDialog();
     }
 
     private LinearLayout initClickableLayout(int resId) {
@@ -230,31 +226,22 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
             startLocalVideo(true);
         }
 
-        trtcCloud.setBeautyStyle(TRTCCloudDef.TRTC_BEAUTY_STYLE_SMOOTH, 5, 5, 5);
+        trtcCloud.setBeautyStyle(mBeautyStyle, mBeautyLevel, mWhiteningLevel, mRuddyLevel);
 
         if (trtcParams.role == TRTCCloudDef.TRTCRoleAnchor && moreDlg.isEnableAudioCapture()) {
             trtcCloud.startLocalAudio();
         }
 
         setVideoFillMode(moreDlg.isVideoFillMode());
-
         setVideoRotation(moreDlg.isVideoVertical());
-
         enableAudioHandFree(moreDlg.isAudioHandFreeMode());
-
         enableGSensor(moreDlg.isEnableGSensorMode());
-
         enableAudioVolumeEvaluation(moreDlg.isAudioVolumeEvaluation());
-
         enableVideoEncMirror(moreDlg.isRemoteVideoMirror());
-
         setLocalViewMirrorMode(moreDlg.getLocalVideoMirror());
 
         mVideosInRoom.clear();
-
         trtcCloud.enterRoom(trtcParams, mAppScene);
-
-        Toast.makeText(this, "开始进房", Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -270,9 +257,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.ll_beauty) {
-            onChangeBeauty();
-        } else if (v.getId() == R.id.ll_camera) {
+        if (v.getId() == R.id.ll_camera) {
             onEnableVideo();
         } else if (v.getId() == R.id.ll_voice) {
             onEnableAudio();
@@ -306,16 +291,6 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
 
     private void hideSendMsgLayout() {
         findViewById(R.id.sendMsg_layout).setVisibility(View.GONE);
-    }
-
-    /**
-     * 点击开启或关闭美颜
-     */
-    private void onChangeBeauty() {
-        bBeautyEnable = !bBeautyEnable;
-
-        mBeautyPannelView.setVisibility(bBeautyEnable ? View.VISIBLE : View.GONE);
-
     }
 
     /**
@@ -382,6 +357,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
      */
     private void onShowSettingDlg() {
         settingDlg.show();
+        settingDlg.setCanceledOnTouchOutside(true);
     }
 
     /*
@@ -389,7 +365,8 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
      */
     private void onShowMoreDlg() {
         moreDlg.setRole(trtcParams.role);
-        moreDlg.show(beingLinkMic, mAppScene);
+        moreDlg.show(mAppScene);
+        moreDlg.setCanceledOnTouchOutside(true);
     }
 
     @Override
@@ -1260,7 +1237,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         }
     }
 
-    private void exitAlertDialog() {
+    private void initAlertDialog() {
         AlertDialog.Builder mAlertDialog = new AlertDialog.Builder(this, R.style.Theme_AppCompat_Light_Dialog_Alert);
         mAlertDialog.setTitle("请确认");
         mAlertDialog.setMessage("确定要退出会议吗？");
