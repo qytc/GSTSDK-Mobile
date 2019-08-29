@@ -389,7 +389,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         } else if (v.getId() == R.id.ll_more) {
             onShowMoreDlg();
         } else if (v.getId() == R.id.ll_speak) {
-            if (bEanbleSpeak) {
+            if (role == TRTCCloudDef.TRTCRoleAnchor) {
                 cancelSpeak();
             } else {
                 requestSpeak();
@@ -439,7 +439,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        onChangeRole(TRTCCloudDef.TRTCRoleAudience);
+                        role = TRTCCloudDef.TRTCRoleAudience;
+                        onChangeRole(role);
                         onEnableSpeak(false);
                     }
                 });
@@ -468,6 +469,12 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         this.bEnableAudio = enableVideo;
     }
 
+    private void closeVideoLayout(boolean enableVideo) {
+        startLocalVideo(enableVideo);
+        ivCamera.setImageResource(enableVideo ? R.mipmap.remote_video_enable : R.mipmap.remote_video_disable);
+        this.bEnableAudio = enableVideo;
+    }
+
     /**
      * 开启/关闭音频上行
      */
@@ -492,6 +499,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     private void onEnableSpeak(boolean enableSpeak) {
         ivSpeak.setImageResource(enableSpeak ? R.mipmap.speak_enable : R.mipmap.speak_disable);
         this.bEanbleSpeak = enableSpeak;
+        onEnableAudio(enableSpeak);
+        closeVideoLayout(enableSpeak);
     }
 
     /**
@@ -1295,7 +1304,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                onChangeRole(TRTCCloudDef.TRTCRoleAnchor);
+                                role=TRTCCloudDef.TRTCRoleAnchor;
+                                onChangeRole(role);
                                 onEnableSpeak(true);
                             }
                         });
@@ -1342,7 +1352,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            onChangeRole(TRTCCloudDef.TRTCRoleAnchor);
+                            role = TRTCCloudDef.TRTCRoleAnchor;
+                            onChangeRole(role);
                             onEnableSpeak(true);
                             showMsg("主席邀请您发言");
                         }
@@ -1357,7 +1368,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            onChangeRole(TRTCCloudDef.TRTCRoleAudience);
+                            role = TRTCCloudDef.TRTCRoleAudience;
+                            onChangeRole(role);
                             onEnableSpeak(false);
                             showMsg("主席取消您发言");
                         }
@@ -1375,7 +1387,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     });
                     break;
                 case FORCE_EXIT:
-                    String msg=jo.getString("msg");
+                    String msg = jo.getString("msg");
                     showMsg(msg);
                     exitRoom();
                     break;
