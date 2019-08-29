@@ -122,19 +122,21 @@
             android:gravity="center_horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
+
             <RadioButton
                 android:id="@+id/rb_anchor"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:checked="true"
                 android:text="上麦主播"
-                android:textSize="18sp"
-                android:textColor="#999999" />
+                android:textColor="#999999"
+                android:textSize="18sp" />
 
             <RadioButton
                 android:id="@+id/rb_audience"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:checked="true"
+                android:checked="false"
                 android:text="普通观众"
                 android:textColor="#999999"
                 android:textSize="18sp" />

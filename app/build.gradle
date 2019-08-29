@@ -23,8 +23,6 @@ android {
 dependencies {
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.tencent.liteav:LiteAVSDK_TRTC:6.6.7458'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.1.0'
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation project(path: ':sdk')

@@ -4,10 +4,17 @@
 
     <application>
         <activity
+            android:name=".AuthActivity"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".RoomActivity"
             android:launchMode="singleTask"
-            android:windowSoftInputMode="adjustPan"
-            android:screenOrientation="landscape" />
+            android:screenOrientation="landscape"
+            android:windowSoftInputMode="adjustPan" />
+        <activity
+            android:name=".TRTCMainActivity"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustPan" />
     </application>
 
 </manifest>

@@ -2,6 +2,8 @@ package io.qytc.gstdemo;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,14 +18,24 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.Toast;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONObject;
 import com.tencent.trtc.TRTCCloud;
 import com.tencent.trtc.TRTCCloudDef;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.qytc.gst.sdk.AuthActivity;
 import io.qytc.gst.sdk.RoomActivity;
+import io.qytc.gst.util.API;
 import io.qytc.gst.util.GetUserSig;
+import io.qytc.gst.util.HttpUtil;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 
 /**
@@ -43,6 +55,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
     private              GetUserSig mUserInfoLoader;
     private              String     mUserId             = "";
     private final        Integer    mSdkAppId           = 1400222844;
+    private AlertDialog alertDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,8 +73,6 @@ public class LoginActivity extends Activity implements View.OnClickListener {
         RadioButton rbVideoCall = findViewById(R.id.rb_videocall);
         rbVideoCall.setOnClickListener(this);
 
-        RadioButton rbAnchor = findViewById(R.id.rb_anchor);
-
         Button tvEnterRoom = findViewById(R.id.tv_enter);
         tvEnterRoom.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -75,6 +86,12 @@ public class LoginActivity extends Activity implements View.OnClickListener {
 
         // 申请动态权限
         checkPermission();
+
+        ProgressDialog.Builder builder = new ProgressDialog.Builder(this);
+        builder.setCancelable(false);
+        builder.setMessage("请稍等...");
+        alertDialog = builder.create();
+
     }
 
     /**
@@ -93,41 +110,94 @@ public class LoginActivity extends Activity implements View.OnClickListener {
      * 参考文档：https://cloud.tencent.com/document/product/647/17275
      */
     private void onJoinRoom(final int roomId, final String userId) {
-        final Intent intent = new Intent(getContext(), RoomActivity.class);
-        intent.putExtra("roomId", roomId);
-        intent.putExtra("userId", userId);
+        if(alertDialog!=null && !alertDialog.isShowing()){
+            alertDialog.show();
+        }
+
+        RadioButton rbAnchor = findViewById(R.id.rb_anchor);
+        final int role = rbAnchor.isChecked() ? TRTCCloudDef.TRTCRoleAnchor : TRTCCloudDef.TRTCRoleAudience;
 
         RadioButton rbLive = findViewById(R.id.rb_live);
-        if (rbLive.isChecked()) {
-            intent.putExtra("AppScene", TRTCCloudDef.TRTC_APP_SCENE_LIVE);
-            RadioButton rbAnchor = findViewById(R.id.rb_anchor);
-            if (rbAnchor.isChecked()) {
-                intent.putExtra("role", TRTCCloudDef.TRTCRoleAnchor);
-            } else {
-                intent.putExtra("role", TRTCCloudDef.TRTCRoleAudience);
-            }
-        } else {
-            intent.putExtra("AppScene", TRTCCloudDef.TRTC_APP_SCENE_VIDEOCALL);
-        }
+        final int appScene = rbLive.isChecked() ? TRTCCloudDef.TRTC_APP_SCENE_LIVE : TRTCCloudDef.TRTC_APP_SCENE_VIDEOCALL;
 
         mUserInfoLoader.getUserSigFromServer(userId, String.valueOf(mSdkAppId), new GetUserSig.IGetUserSigListener() {
             @Override
             public void onComplete(String userSig, String errMsg) {
+                closeDialog();
+
                 if (!TextUtils.isEmpty(userSig)) {
+
+                    Intent intent = new Intent(getContext(), AuthActivity.class);
+                    intent.putExtra("roomId", roomId);
+                    intent.putExtra("userId", userId);
                     intent.putExtra("sdkAppId", mSdkAppId);
                     intent.putExtra("userSig", userSig);
-                    saveUserInfo(String.valueOf(roomId), userId, userSig);
+                    intent.putExtra("role", role);
+                    intent.putExtra("appScene",appScene);
+
+                    saveUserInfo(String.valueOf(roomId), userId);
                     startActivity(intent);
+
+
                 } else {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(getContext(), "从服务器获取userSig失败", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+
+                    showMsg("从服务器获取userSig失败");
                 }
             }
         });
+    }
+
+    private void joinRoomAuth(final JSONObject loginInfo) {
+        JSONObject jo = new JSONObject();
+        jo.put("roomNo", loginInfo.getInteger("roomId"));
+        jo.put("acctno", loginInfo.getString("userId"));
+
+        HttpUtil.getInstance(API.JOIN_ROOM).post(jo.toString(), new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                closeDialog();
+                showMsg("加入房间失败，错误内容：" + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                closeDialog();
+                String jsonStr = response.body().string();
+                try {
+                    JSONObject jo = JSON.parseObject(jsonStr);
+                    if (jo.get("code").equals("0")) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                Intent intent = new Intent(getContext(), RoomActivity.class);
+                                intent.putExtra("roomId", loginInfo.getInteger("roomId"));
+                                intent.putExtra("userId", loginInfo.getInteger("userId"));
+                                intent.putExtra("sdkAppId", loginInfo.getInteger("sdkAppId"));
+                                intent.putExtra("userSig", loginInfo.getString("userSig"));
+                                intent.putExtra("role", loginInfo.getInteger("role"));
+                                intent.putExtra("appScene", loginInfo.getInteger("appScene"));
+
+                                saveUserInfo(loginInfo.getString("roomId"), loginInfo.getString("userId"));
+                                startActivity(intent);
+
+                            }
+                        });
+                    } else {
+                        showMsg(jo.getString("msg"));
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    showMsg("json数据解析失败");
+                }
+            }
+        });
+    }
+
+    private void closeDialog(){
+        if(alertDialog!=null && alertDialog.isShowing()){
+            alertDialog.dismiss();
+        }
     }
 
     private void startJoinRoom() {
@@ -197,14 +267,13 @@ public class LoginActivity extends Activity implements View.OnClickListener {
         }
     }
 
-    private void saveUserInfo(String roomId, String userId, String userSig) {
+    private void saveUserInfo(String roomId, String userId) {
         try {
             mUserId = userId;
             SharedPreferences shareInfo = this.getSharedPreferences("per_data", 0);
             SharedPreferences.Editor editor = shareInfo.edit();
             editor.putString("userId", userId);
             editor.putString("roomId", roomId);
-            editor.putString("userSig", userSig);
             editor.putLong("userTime", System.currentTimeMillis());
             editor.commit();
         } catch (Exception e) {
@@ -246,5 +315,14 @@ public class LoginActivity extends Activity implements View.OnClickListener {
                 break;
             }
         }
+    }
+
+    private void showMsg(final String msg) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(LoginActivity.this, msg, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

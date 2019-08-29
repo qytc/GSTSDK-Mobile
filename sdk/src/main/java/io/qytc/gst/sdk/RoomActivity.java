@@ -2,20 +2,25 @@ package io.qytc.gst.sdk;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.tencent.liteav.TXLiteAVCode;
 import com.tencent.rtmp.ui.TXCloudVideoView;
 import com.tencent.trtc.TRTCCloud;
@@ -23,15 +28,27 @@ import com.tencent.trtc.TRTCCloudDef;
 import com.tencent.trtc.TRTCCloudListener;
 import com.tencent.trtc.TRTCStatistics;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
+import io.qytc.gst.bean.DeviceStatusBean;
 import io.qytc.gst.dialog.MoreDialog;
 import io.qytc.gst.dialog.SettingDialog;
+import io.qytc.gst.util.API;
 import io.qytc.gst.util.BeautySettingPanel;
+import io.qytc.gst.util.HttpUtil;
 import io.qytc.gst.view.TRTCVideoViewLayout;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
+import okio.ByteString;
 
 
 /**
@@ -46,31 +63,57 @@ import io.qytc.gst.view.TRTCVideoViewLayout;
  * 3. 创建或者加入某一个通话房间，需要先指定 roomId 和 userId，这部分由 TRTCNewActivity 来实现
  */
 public class RoomActivity extends Activity implements View.OnClickListener, SettingDialog.ISettingListener, MoreDialog.IMoreListener, TRTCVideoViewLayout.ITRTCVideoViewLayoutListener, BeautySettingPanel.IOnBeautyParamsChangeListener {
-    private final static String TAG = RoomActivity.class.getSimpleName();
-
-    private boolean bEnableVideo = true;
-    private boolean bEnableAudio   = true;
-    private boolean bEanbleSendMsg = false;
-    private int iDebugLevel = 0;
+    private final static String  TAG          = RoomActivity.class.getSimpleName();
+    private              Context mContext;
+    private              boolean bEnableVideo = true;
+    private              boolean bEnableAudio = true;
+    private              boolean bEanbleSpeak = false;
 
     private TextView  tvRoomId;
-    private ImageView ivCamera, ivVoice, ivLog;
-    private SettingDialog           settingDlg;
-    private MoreDialog              moreDlg;
-    private TRTCVideoViewLayout     mVideoViewLayout;
+    private ImageView ivSpeak, ivCamera, ivVoice;
+    private SettingDialog       settingDlg;
+    private MoreDialog          moreDlg;
+    private TRTCVideoViewLayout mVideoViewLayout;
 
     private AlertDialog             exitDialog;
     private TRTCCloudDef.TRTCParams trtcParams;     /// TRTC SDK 视频通话房间进入所必须的参数
     private TRTCCloud               trtcCloud;              /// TRTC SDK 实例对象
     private TRTCCloudListenerImpl   trtcListener;    /// TRTC SDK 回调监听
 
-    private int    mBeautyLevel    = 0;
-    private int    mWhiteningLevel = 0;
-    private int    mRuddyLevel     = 0;
-    private int    mBeautyStyle    = TRTCCloudDef.TRTC_BEAUTY_STYLE_NATURE;
-    private int    mSdkAppId       = -1;
-    private int    mAppScene       = TRTCCloudDef.TRTC_APP_SCENE_LIVE;
-    private String selfUserId      = null;
+    private int mBeautyLevel    = 0;
+    private int mWhiteningLevel = 0;
+    private int mRuddyLevel     = 0;
+    private int mBeautyStyle    = TRTCCloudDef.TRTC_BEAUTY_STYLE_NATURE;
+    private int mSdkAppId       = -1;
+    private int mAppScene       = TRTCCloudDef.TRTC_APP_SCENE_LIVE;
+    private int roomId;
+
+    private String selfUserId = null;
+    private String userSig;
+    private String deviceStatus;
+
+    private OkHttpClient mOkHttpClient;
+    private WebSocket    webSocket;
+
+    private DeviceStatusBean mDeviceStatusBean = new DeviceStatusBean();
+
+    private Handler               mHandler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case 1://websocket心跳
+                    webSocket.send(deviceStatus);
+                    Log.d(TAG, "handleMessage: " + deviceStatus);
+                    if (webSocketListener.webSocketConnect) {
+                        mHandler.sendEmptyMessageDelayed(1, 3000);
+                    }
+                    break;
+            }
+        }
+    };
+    private EchoWebSocketListener webSocketListener;
+    private int                   role;
 
     private static class VideoStream {
         String userId;
@@ -88,7 +131,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        mContext = this;
         //应用运行时，保持屏幕高亮，不锁屏
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -98,35 +141,67 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         //获取前一个页面得到的进房参数
         Intent intent = getIntent();
         mSdkAppId = intent.getIntExtra("sdkAppId", 0);
-        int roomId = intent.getIntExtra("roomId", 0);
+        roomId = intent.getIntExtra("roomId", 0);
         selfUserId = intent.getStringExtra("userId");
-        String userSig = intent.getStringExtra("userSig");
+        userSig = intent.getStringExtra("userSig");
+        mAppScene = intent.getIntExtra("appScene", mAppScene);
+        role = intent.getIntExtra("role", TRTCCloudDef.TRTCRoleAudience);
 
         trtcParams = new TRTCCloudDef.TRTCParams(mSdkAppId, selfUserId, userSig, roomId, "", "");
-        trtcParams.role = intent.getIntExtra("role", TRTCCloudDef.TRTCRoleAnchor);
+        trtcParams.role = role;
+        init();
+    }
 
-        mAppScene = intent.getIntExtra("AppScene", mAppScene);
-
+    private void init() {
+        initDeviceStatusBean();
+        //启动webSocket
+        startWebSocket();
         //初始化 UI 控件
         initView();
-
         //创建 TRTC SDK 实例
-        trtcListener = new TRTCCloudListenerImpl(this);
-        trtcCloud = TRTCCloud.sharedInstance(this);
-        trtcCloud.setListener(trtcListener);
-
+        initTRTC();
         //开始进入视频通话房间
         enterRoom();
+    }
+
+    private void initDeviceStatusBean() {
+        mDeviceStatusBean.setCmd("keepAlive");
+        DeviceStatusBean.DataBean dataBean = new DeviceStatusBean.DataBean();
+        dataBean.setAcctno(selfUserId);
+        dataBean.setRoomNo(roomId);
+        dataBean.setSpeaker(trtcParams.role == TRTCCloudDef.TRTCRoleAnchor ? 1 : 0);
+        dataBean.setCamera(trtcParams.role == TRTCCloudDef.TRTCRoleAnchor ? 1 : 0);
+        dataBean.setMic(trtcParams.role == TRTCCloudDef.TRTCRoleAnchor ? 1 : 0);
+        dataBean.setInRoom(1);
+        mDeviceStatusBean.setData(dataBean);
+        deviceStatus = JSON.toJSONString(mDeviceStatusBean);
+
+    }
+
+    private void showMsg(final String msg) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(mContext, msg, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (exitDialog.isShowing()) {
+
+        mHandler.removeMessages(1);
+
+
+        if (exitDialog != null && exitDialog.isShowing()) {
             exitDialog.dismiss();
         }
-        trtcCloud.setListener(null);
-        TRTCCloud.destroySharedInstance();
+        if (trtcCloud != null) {
+            trtcCloud.setListener(null);
+            TRTCCloud.destroySharedInstance();
+        }
+
     }
 
     @Override
@@ -134,28 +209,37 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         exitDialog.show();
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (exitDialog != null && exitDialog.isShowing()) {
+            exitDialog.dismiss();
+        }
+    }
+
     /**
      * 初始化界面控件，包括主要的视频显示View，以及底部的一排功能按钮
      */
     private void initView() {
 
+        initClickableLayout(R.id.ll_speak);
         initClickableLayout(R.id.ll_camera);
         initClickableLayout(R.id.ll_voice);
-        initClickableLayout(R.id.ll_log);
         initClickableLayout(R.id.ll_role);
         initClickableLayout(R.id.ll_more);
-
-        if (BuildConfig.DEBUG) {
-            findViewById(R.id.ll_log).setVisibility(View.VISIBLE);
-        }
 
         mVideoViewLayout = findViewById(R.id.ll_mainview);
         mVideoViewLayout.setUserId(trtcParams.userId);
         mVideoViewLayout.setListener(this);
 
-        ivLog = findViewById(R.id.iv_log);
+        ivSpeak = findViewById(R.id.iv_speak);
+        ivSpeak.setImageResource(role == TRTCCloudDef.TRTCRoleAnchor ? R.mipmap.speak_enable : R.mipmap.speak_disable);
+
         ivVoice = findViewById(R.id.iv_mic);
+        ivVoice.setImageResource(role == TRTCCloudDef.TRTCRoleAnchor ? R.mipmap.remote_audio_enable : R.mipmap.remote_audio_disable);
+
         ivCamera = findViewById(R.id.iv_camera);
+        ivCamera.setImageResource(role == TRTCCloudDef.TRTCRoleAnchor ? R.mipmap.remote_video_enable : R.mipmap.remote_video_disable);
 
         tvRoomId = findViewById(R.id.tv_room_id);
         tvRoomId.setText("会议室号：" + trtcParams.roomId);
@@ -171,7 +255,13 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
             }
         });
 
-        initAlertDialog();
+        initExitDialog();
+    }
+
+    private void initTRTC() {
+        trtcListener = new TRTCCloudListenerImpl(this);
+        trtcCloud = TRTCCloud.sharedInstance(this);
+        trtcCloud.setListener(trtcListener);
     }
 
     private LinearLayout initClickableLayout(int resId) {
@@ -193,7 +283,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         encParam.videoResolution = settingDlg.getResolution();
         encParam.videoFps = settingDlg.getVideoFps();
         encParam.videoBitrate = settingDlg.getVideoBitrate();
-        encParam.videoResolutionMode = settingDlg.isVideoVertical() ? TRTCCloudDef.TRTC_VIDEO_RESOLUTION_MODE_PORTRAIT : TRTCCloudDef.TRTC_VIDEO_RESOLUTION_MODE_LANDSCAPE;
+        encParam.videoResolutionMode = TRTCCloudDef.TRTC_VIDEO_RESOLUTION_MODE_LANDSCAPE;
         trtcCloud.setVideoEncoderParam(encParam);
 
         TRTCCloudDef.TRTCNetworkQosParam qosParam = new TRTCCloudDef.TRTCNetworkQosParam();
@@ -232,10 +322,12 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
             trtcCloud.startLocalAudio();
         }
 
-        setVideoFillMode(moreDlg.isVideoFillMode());
+//        setVideoFillMode(moreDlg.isVideoFillMode());
+        setVideoFillMode(true);
         setVideoRotation(moreDlg.isVideoVertical());
         enableAudioHandFree(moreDlg.isAudioHandFreeMode());
-        enableGSensor(moreDlg.isEnableGSensorMode());
+//        enableGSensor(moreDlg.isEnableGSensorMode());
+        enableGSensor(true);
         enableAudioVolumeEvaluation(moreDlg.isAudioVolumeEvaluation());
         enableVideoEncMirror(moreDlg.isRemoteVideoMirror());
         setLocalViewMirrorMode(moreDlg.getLocalVideoMirror());
@@ -248,6 +340,25 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
      * 退出视频房间
      */
     private void exitRoom() {
+
+        JSONObject jo = new JSONObject();
+        jo.put("roomNo", roomId);
+        jo.put("acctno", selfUserId);
+        HttpUtil.getInstance(API.EXIT_ROOM).post(jo.toJSONString(), new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+
+            }
+        });
+
+        if (webSocket != null) {
+            webSocket.close(1000, "Normal Closure");
+        }
         if (trtcCloud != null) {
             trtcCloud.exitRoom();
         }
@@ -258,40 +369,80 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.ll_camera) {
-            onEnableVideo();
+            if (role == TRTCCloudDef.TRTCRoleAnchor) {
+                onEnableVideo();
+            } else {
+                showMsg("请先申请发言");
+            }
         } else if (v.getId() == R.id.ll_voice) {
-            onEnableAudio();
-        } else if (v.getId() == R.id.ll_log) {
-//            onChangeLogStatus();
-            onChangeSendMsgStatus();
+            if (role == TRTCCloudDef.TRTCRoleAnchor) {
+                onEnableAudio();
+            } else {
+                showMsg("请先申请发言");
+            }
         } else if (v.getId() == R.id.ll_role) {
             onShowSettingDlg();
         } else if (v.getId() == R.id.ll_more) {
             onShowMoreDlg();
+        } else if (v.getId() == R.id.ll_speak) {
+            if (bEanbleSpeak) {
+                cancelSpeak();
+            } else {
+                requestSpeak();
+            }
         }
     }
 
-    private void showSendMsgLayout() {
-        findViewById(R.id.sendMsg_layout).setVisibility(View.VISIBLE);
-        findViewById(R.id.send_btn).setOnClickListener(new View.OnClickListener() {
+    private void requestSpeak() {
+        JSONObject jo = new JSONObject();
+        jo.put("acctno", selfUserId);
+        jo.put("roomNo", roomId);
+
+        HttpUtil.getInstance(API.REQUEST_SPEAK).post(jo.toString(), new Callback() {
             @Override
-            public void onClick(View view) {
-                EditText msgId_et = findViewById(R.id.msgId_et);
-                EditText msg_et = findViewById(R.id.value_et);
-                Integer msgId = Integer.valueOf(msgId_et.getText().toString());
-                String msg = msg_et.getText().toString();
-                if (msgId == 9) {
-                    String[] userIds = msg.split(",");
-                    swapViewByIndex(userIds);
+            public void onFailure(Call call, IOException e) {
+                showMsg("申请发言请求失败，" + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(response.code()==200){
+                    String jsonStr = response.body().string();
+                    JSONObject jo = JSON.parseObject(jsonStr);
+                    showMsg(jo.getString("msg"));
+                }else {
+                    showMsg("服务器出现异常");
                 }
-                trtcCloud.sendCustomCmdMsg(msgId, msg.getBytes(), true, true);
             }
         });
     }
 
-    private void hideSendMsgLayout() {
-        findViewById(R.id.sendMsg_layout).setVisibility(View.GONE);
+    private void cancelSpeak() {
+        JSONObject jo = new JSONObject();
+        jo.put("acctno", selfUserId);
+        jo.put("target", selfUserId);
+        HttpUtil.getInstance(API.CANCEL_SPEAK).post(jo.toString(), new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                showMsg("取消发言请求失败，" + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                mDeviceStatusBean.getData().setSpeaker(0);
+                deviceStatus = JSON.toJSONString(mDeviceStatusBean);
+                webSocket.send(deviceStatus);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        onChangeRole(TRTCCloudDef.TRTCRoleAudience);
+                        onEnableSpeak(false);
+                    }
+                });
+            }
+        });
     }
+
 
     /**
      * 开启/关闭视频上行
@@ -332,24 +483,11 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
     }
 
     /**
-     * 点击打开仪表盘浮层，仪表盘浮层是SDK中覆盖在视频画面上的一系列数值状态
+     * 允许/拒绝发言
      */
-    private void onChangeLogStatus() {
-
-        iDebugLevel = (iDebugLevel + 1) % 3;
-        ivLog.setImageResource((0 == iDebugLevel) ? R.mipmap.log2 : R.mipmap.log);
-
-        trtcCloud.showDebugView(iDebugLevel);
-    }
-
-    private void onChangeSendMsgStatus() {
-        bEanbleSendMsg = !bEanbleSendMsg;
-        ivLog.setImageResource(bEanbleSendMsg ? R.mipmap.log : R.mipmap.log2);
-        if (bEanbleSendMsg) {
-            showSendMsgLayout();
-        } else {
-            hideSendMsgLayout();
-        }
+    private void onEnableSpeak(boolean enableSpeak) {
+        ivSpeak.setImageResource(enableSpeak ? R.mipmap.speak_enable : R.mipmap.speak_disable);
+        this.bEanbleSpeak = enableSpeak;
     }
 
     /**
@@ -535,7 +673,6 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
                 if (renderView != null) {
                     // 设置仪表盘数据显示
                     renderView.setVisibility(View.VISIBLE);
-                    activity.trtcCloud.showDebugView(activity.iDebugLevel);
                     activity.trtcCloud.setDebugViewMargin(userId, new TRTCCloud.TRTCViewMargin(0.0f, 0.0f, 0.1f, 0.0f));
                 }
                 activity.enableAudioVolumeEvaluation(activity.moreDlg.isAudioVolumeEvaluation());
@@ -700,91 +837,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
 
         @Override
         public void onRecvCustomCmdMsg(String userId, int cmdID, int seq, byte[] message) {
-            final RoomActivity activity = mContext.get();
-            if (activity == null) {
-                return;
-            }
-            String msg = new String(message);
-            String[] msgTxt = msg.split(",");
-            String targetUserId = null;
-            if (msgTxt.length > 0) {
-                targetUserId = msgTxt[0];
-            }
-            switch (cmdID) {
-                case 2://主席端打开/关闭指定会场麦克风
-                    //1:打开 0:关闭
-                    final boolean enableAudio = msg.split(",")[0].equals("1");
 
-                    if (!targetUserId.equals(activity.selfUserId)) {
-                        return;
-                    }
-
-                    activity.onEnableAudio(enableAudio);
-                    activity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(activity, "主席已" + (enableAudio ? "打开" : "关闭") + "您的麦克风", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    break;
-                case 3://主席分会场主动打开/关闭摄像头
-                    //1:打开 0:关闭
-                    final boolean enableVideo = msg.split(",")[0].equals("1");
-
-                    if (!targetUserId.equals(activity.selfUserId)) {
-                        return;
-                    }
-
-                    activity.onEnableVideo(enableVideo);
-                    activity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(activity, "主席已" + (enableVideo ? "打开" : "关闭") + "您的摄像头", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    break;
-                case 5://主席端同意/拒绝分会场发言
-                    //1:同意 0：拒绝
-                    final boolean speeakResult = msg.split(",")[0].equals("1");
-
-                    if (!targetUserId.equals(activity.selfUserId)) {
-                        return;
-                    }
-                    if (speeakResult) {
-                        activity.onChangeRole(TRTCCloudDef.TRTCRoleAnchor);
-                    }
-
-                    activity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(activity, "主席已" + (speeakResult ? "同意" : "拒绝") + "您的发言申请", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    break;
-                case 6://主席端邀请/取消分会场发言
-                    //1：邀请 0：取消
-
-                    final boolean result = msg.split(",")[0].equals("1");
-
-                    if (!targetUserId.equals(activity.selfUserId)) {
-                        return;
-                    }
-
-                    activity.onChangeRole(result ? TRTCCloudDef.TRTCRoleAnchor : TRTCCloudDef.TRTCRoleAudience);
-
-                    activity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(activity, "主席" + (result ? "邀请" : "取消") + "您发言", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-
-                    break;
-                case 9://广播多画面
-                    String[] userIds = msg.split(",");
-                    activity.swapViewByIndex(userIds);
-                    break;
-            }
         }
     }
 
@@ -1237,7 +1290,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         }
     }
 
-    private void initAlertDialog() {
+    private void initExitDialog() {
         AlertDialog.Builder mAlertDialog = new AlertDialog.Builder(this, R.style.Theme_AppCompat_Light_Dialog_Alert);
         mAlertDialog.setTitle("请确认");
         mAlertDialog.setMessage("确定要退出会议吗？");
@@ -1250,5 +1303,170 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         });
         mAlertDialog.setNegativeButton("取消", null);
         exitDialog = mAlertDialog.create();
+    }
+
+    private void startWebSocket() {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        mOkHttpClient = builder.build();
+
+        Request request = new Request.Builder().url(API.WS_HOST).build();
+        webSocketListener = new EchoWebSocketListener();
+        webSocket = mOkHttpClient.newWebSocket(request, webSocketListener);
+        mOkHttpClient.dispatcher().executorService().shutdown();
+    }
+
+    class EchoWebSocketListener extends WebSocketListener {
+
+        public boolean webSocketConnect;
+
+        public static final String CONFIRM_SPEAK  = "confirm_speak";
+        public static final String CONTROL_MIC    = "control_mic";
+        public static final String CONTROL_CAMERA = "control_camera";
+        public static final String INVITE_SPEAK   = "invite_speak";
+        public static final String CANCEL_SPEAK   = "cancel_speak";
+        public static final String MULTI_SCREEN   = "multi_screen";
+
+        @Override
+        public void onOpen(WebSocket webSocket, Response response) {
+            super.onOpen(webSocket, response);
+            Log.d(TAG, "WebSocket 连接成功");
+            webSocketConnect = true;
+            mHandler.sendEmptyMessage(1);
+        }
+
+        @Override
+        public void onMessage(WebSocket webSocket, ByteString bytes) {
+            super.onMessage(webSocket, bytes);
+            Log.d(TAG, "ByteString onMessage: " + bytes.toString());
+
+        }
+
+        @Override
+        public void onMessage(WebSocket webSocket, String text) {
+            super.onMessage(webSocket, text);
+            Log.d(TAG, "String onMessage: " + text);
+
+            JSONObject jo = JSON.parseObject(text);
+            Integer roomNo = jo.getIntValue("roomNo");
+            if (roomNo != roomId) {
+                return;
+            }
+
+            final int result;
+            switch (jo.getString("cmd")) {
+                case CONFIRM_SPEAK://主席端 同意/拒绝 分会场发言申请
+                    result = jo.getIntValue("result");
+
+                    mDeviceStatusBean.getData().setSpeaker(result);
+                    deviceStatus = JSON.toJSONString(mDeviceStatusBean);
+                    webSocket.send(deviceStatus);
+
+                    if (result == 1) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                onChangeRole(TRTCCloudDef.TRTCRoleAnchor);
+                                onEnableSpeak(true);
+                            }
+                        });
+                    }
+                    showMsg("主席已" + (result == 1 ? "同意" : "拒绝") + "您的发言申请");
+                    break;
+                case CONTROL_MIC: {//主席端 打开/关闭 分会场麦克风
+                    result = jo.getIntValue("result");
+
+                    mDeviceStatusBean.getData().setMic(result);
+                    deviceStatus = JSON.toJSONString(mDeviceStatusBean);
+                    webSocket.send(deviceStatus);
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            onEnableAudio(result == 1);
+                        }
+                    });
+                    showMsg("主席已" + (result == 1 ? "打开" : "关闭") + "您的麦克风");
+                }
+                break;
+                case CONTROL_CAMERA://主席端 打开/关闭 分会场摄像头
+                    result = jo.getIntValue("result");
+
+                    mDeviceStatusBean.getData().setCamera(result);
+                    deviceStatus = JSON.toJSONString(mDeviceStatusBean);
+                    webSocket.send(deviceStatus);
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            onEnableVideo(result == 1);
+                        }
+                    });
+                    showMsg("主席已" + (result == 1 ? "打开" : "关闭") + "您的摄像头");
+                    break;
+                case INVITE_SPEAK://主席端邀请分会场发言
+
+                    mDeviceStatusBean.getData().setSpeaker(1);
+                    deviceStatus = JSON.toJSONString(mDeviceStatusBean);
+                    webSocket.send(deviceStatus);
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            onChangeRole(TRTCCloudDef.TRTCRoleAnchor);
+                            onEnableSpeak(true);
+                            showMsg("主席邀请您发言");
+                        }
+                    });
+                    break;
+                case CANCEL_SPEAK://主席端取消分会场发言
+
+                    mDeviceStatusBean.getData().setSpeaker(0);
+                    deviceStatus = JSON.toJSONString(mDeviceStatusBean);
+                    webSocket.send(deviceStatus);
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            onChangeRole(TRTCCloudDef.TRTCRoleAudience);
+                            onEnableSpeak(false);
+                            showMsg("主席取消您发言");
+                        }
+                    });
+                    break;
+
+                case MULTI_SCREEN://多画面
+                    String users = jo.getString("acctno");
+                    final String[] userIds = users.split(",");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            swapViewByIndex(userIds);
+                        }
+                    });
+                    break;
+            }
+        }
+
+        @Override
+        public void onClosed(WebSocket webSocket, int code, String reason) {
+            super.onClosed(webSocket, code, reason);
+            Log.d(TAG, "WebSocket 连接已关闭");
+            webSocketConnect = false;
+        }
+
+        @Override
+        public void onClosing(WebSocket webSocket, int code, String reason) {
+            super.onClosing(webSocket, code, reason);
+            Log.d(TAG, "WebSocket 正在关闭");
+            webSocketConnect = false;
+        }
+
+        @Override
+        public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+            super.onFailure(webSocket, t, response);
+            Log.e(TAG, "WebSocket 连接出错:" + t.getMessage());
+            webSocketConnect = false;
+            startWebSocket();
+        }
     }
 }
