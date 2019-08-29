@@ -62,7 +62,11 @@ import okio.ByteString;
  * <p>
  * 3. 创建或者加入某一个通话房间，需要先指定 roomId 和 userId，这部分由 TRTCNewActivity 来实现
  */
-public class RoomActivity extends Activity implements View.OnClickListener, SettingDialog.ISettingListener, MoreDialog.IMoreListener, TRTCVideoViewLayout.ITRTCVideoViewLayoutListener, BeautySettingPanel.IOnBeautyParamsChangeListener {
+public class RoomActivity extends Activity implements View.OnClickListener,
+        SettingDialog.ISettingListener,
+        MoreDialog.IMoreListener,
+        TRTCVideoViewLayout.ITRTCVideoViewLayoutListener {
+
     private final static String  TAG          = RoomActivity.class.getSimpleName();
     private              Context mContext;
     private              boolean bEnableVideo = true;
@@ -190,10 +194,12 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        mHandler.removeMessages(1);
-
-
+        if (webSocketListener != null) {
+            webSocketListener.webSocketConnect = false;
+        }
+        if (webSocket != null) {
+            webSocket.close(1000, "Normal Closure");
+        }
         if (exitDialog != null && exitDialog.isShowing()) {
             exitDialog.dismiss();
         }
@@ -356,9 +362,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
             }
         });
 
-        if (webSocket != null) {
-            webSocket.close(1000, "Normal Closure");
-        }
+
         if (trtcCloud != null) {
             trtcCloud.exitRoom();
         }
@@ -406,11 +410,11 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if(response.code()==200){
+                if (response.code() == 200) {
                     String jsonStr = response.body().string();
                     JSONObject jo = JSON.parseObject(jsonStr);
                     showMsg(jo.getString("msg"));
-                }else {
+                } else {
                     showMsg("服务器出现异常");
                 }
             }
@@ -966,81 +970,6 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         }
     }
 
-    @Override
-    public void onBeautyParamsChange(BeautySettingPanel.BeautyParams params, int key) {
-        switch (key) {
-            case BeautySettingPanel.BEAUTYPARAM_BEAUTY:
-                mBeautyStyle = params.mBeautyStyle;
-                mBeautyLevel = params.mBeautyLevel;
-                if (trtcCloud != null) {
-                    trtcCloud.setBeautyStyle(mBeautyStyle, mBeautyLevel, mWhiteningLevel, mRuddyLevel);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_WHITE:
-                mWhiteningLevel = params.mWhiteLevel;
-                if (trtcCloud != null) {
-                    trtcCloud.setBeautyStyle(mBeautyStyle, mBeautyLevel, mWhiteningLevel, mRuddyLevel);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_BIG_EYE:
-                if (trtcCloud != null) {
-                    trtcCloud.setEyeScaleLevel(params.mBigEyeLevel);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_FACE_LIFT:
-                if (trtcCloud != null) {
-                    trtcCloud.setFaceSlimLevel(params.mFaceSlimLevel);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_FILTER:
-                if (trtcCloud != null) {
-                    trtcCloud.setFilter(params.mFilterBmp);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_GREEN:
-                if (trtcCloud != null) {
-                    trtcCloud.setGreenScreenFile(params.mGreenFile);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_MOTION_TMPL:
-                if (trtcCloud != null) {
-                    trtcCloud.selectMotionTmpl(params.mMotionTmplPath);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_RUDDY:
-                mRuddyLevel = params.mRuddyLevel;
-                if (trtcCloud != null) {
-                    trtcCloud.setBeautyStyle(mBeautyStyle, mBeautyLevel, mWhiteningLevel, mRuddyLevel);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_FACEV:
-                if (trtcCloud != null) {
-                    trtcCloud.setFaceVLevel(params.mFaceVLevel);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_FACESHORT:
-                if (trtcCloud != null) {
-                    trtcCloud.setFaceShortLevel(params.mFaceShortLevel);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_CHINSLIME:
-                if (trtcCloud != null) {
-                    trtcCloud.setChinLevel(params.mChinSlimLevel);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_NOSESCALE:
-                if (trtcCloud != null) {
-                    trtcCloud.setNoseSlimLevel(params.mNoseScaleLevel);
-                }
-                break;
-            case BeautySettingPanel.BEAUTYPARAM_FILTER_MIX_LEVEL:
-                if (trtcCloud != null) {
-                    trtcCloud.setFilterConcentration(params.mFilterMixLevel / 10.f);
-                }
-                break;
-        }
-    }
-
     private void setVideoFillMode(boolean bFillMode) {
         if (bFillMode) {
             trtcCloud.setLocalViewFillMode(TRTCCloudDef.TRTC_VIDEO_RENDER_MODE_FILL);
@@ -1325,6 +1254,7 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
         public static final String INVITE_SPEAK   = "invite_speak";
         public static final String CANCEL_SPEAK   = "cancel_speak";
         public static final String MULTI_SCREEN   = "multi_screen";
+        public static final String FORCE_EXIT     = "force_exit";
 
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
@@ -1443,6 +1373,11 @@ public class RoomActivity extends Activity implements View.OnClickListener, Sett
                             swapViewByIndex(userIds);
                         }
                     });
+                    break;
+                case FORCE_EXIT:
+                    String msg=jo.getString("msg");
+                    showMsg(msg);
+                    exitRoom();
                     break;
             }
         }
