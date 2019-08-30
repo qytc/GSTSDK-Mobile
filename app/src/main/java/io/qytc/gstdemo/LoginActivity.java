@@ -19,7 +19,6 @@ import android.widget.RadioButton;
 import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.tencent.trtc.TRTCCloud;
 import com.tencent.trtc.TRTCCloudDef;
@@ -29,9 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.qytc.gst.sdk.AuthActivity;
-import io.qytc.gst.sdk.RoomActivity;
 import io.qytc.gst.util.API;
-import io.qytc.gst.util.GetUserSig;
 import io.qytc.gst.util.HttpUtil;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -51,11 +48,10 @@ import okhttp3.Response;
  * 比如视频会议中的会议号是会控系统提前预定好的，客服系统中的房间号也是根据客服员工的工号决定的。
  */
 public class LoginActivity extends Activity implements View.OnClickListener {
-    private final static int        REQ_PERMISSION_CODE = 0x1000;
-    private              GetUserSig mUserInfoLoader;
-    private              String     mUserId             = "";
-    private final        Integer    mSdkAppId           = 1400222844;
-    private AlertDialog alertDialog;
+    private final static int         REQ_PERMISSION_CODE = 0x1000;
+    private              String      mUserId             = "";
+    private final        Integer     mSdkAppId           = 1400222844;
+    private              AlertDialog alertDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,9 +76,6 @@ public class LoginActivity extends Activity implements View.OnClickListener {
                 startJoinRoom();
             }
         });
-
-        // 如果配置有config文件，则从config文件中选择userId
-        mUserInfoLoader = new GetUserSig(this);
 
         // 申请动态权限
         checkPermission();
@@ -110,7 +103,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
      * 参考文档：https://cloud.tencent.com/document/product/647/17275
      */
     private void onJoinRoom(final int roomId, final String userId) {
-        if(alertDialog!=null && !alertDialog.isShowing()){
+        if (alertDialog != null && !alertDialog.isShowing()) {
             alertDialog.show();
         }
 
@@ -120,82 +113,45 @@ public class LoginActivity extends Activity implements View.OnClickListener {
         RadioButton rbLive = findViewById(R.id.rb_live);
         final int appScene = rbLive.isChecked() ? TRTCCloudDef.TRTC_APP_SCENE_LIVE : TRTCCloudDef.TRTC_APP_SCENE_VIDEOCALL;
 
-        mUserInfoLoader.getUserSigFromServer(userId, String.valueOf(mSdkAppId), new GetUserSig.IGetUserSigListener() {
+        JSONObject jo = new JSONObject();
+        jo.put("appId",mSdkAppId);
+        jo.put("userId",userId);
+        HttpUtil.getInstance(API.generateUserSig).post(jo.toJSONString(), new Callback() {
             @Override
-            public void onComplete(String userSig, String errMsg) {
+            public void onFailure(Call call, IOException e) {
                 closeDialog();
+                showMsg("请求签名发生错误:" + e.getMessage());
+            }
 
-                if (!TextUtils.isEmpty(userSig)) {
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                closeDialog();
+                if (response.code() == 200) {
+                    JSONObject object = JSON.parseObject(response.body().string());
+                    if (object.get("code").equals("0")) {
+                        String userSig = object.getString("data");
+                        Intent intent = new Intent(getContext(), AuthActivity.class);
+                        intent.putExtra("roomId", roomId);
+                        intent.putExtra("userId", userId);
+                        intent.putExtra("sdkAppId", mSdkAppId);
+                        intent.putExtra("userSig", userSig);
+                        intent.putExtra("role", role);
+                        intent.putExtra("appScene", appScene);
 
-                    Intent intent = new Intent(getContext(), AuthActivity.class);
-                    intent.putExtra("roomId", roomId);
-                    intent.putExtra("userId", userId);
-                    intent.putExtra("sdkAppId", mSdkAppId);
-                    intent.putExtra("userSig", userSig);
-                    intent.putExtra("role", role);
-                    intent.putExtra("appScene",appScene);
-
-                    saveUserInfo(String.valueOf(roomId), userId);
-                    startActivity(intent);
-
-
+                        saveUserInfo(String.valueOf(roomId), userId);
+                        startActivity(intent);
+                    } else {
+                        showMsg(object.getString("msg"));
+                    }
                 } else {
-
                     showMsg("从服务器获取userSig失败");
                 }
             }
         });
     }
 
-    private void joinRoomAuth(final JSONObject loginInfo) {
-        JSONObject jo = new JSONObject();
-        jo.put("roomNo", loginInfo.getInteger("roomId"));
-        jo.put("acctno", loginInfo.getString("userId"));
-
-        HttpUtil.getInstance(API.JOIN_ROOM).post(jo.toString(), new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                closeDialog();
-                showMsg("加入房间失败，错误内容：" + e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                closeDialog();
-                String jsonStr = response.body().string();
-                try {
-                    JSONObject jo = JSON.parseObject(jsonStr);
-                    if (jo.get("code").equals("0")) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-
-                                Intent intent = new Intent(getContext(), RoomActivity.class);
-                                intent.putExtra("roomId", loginInfo.getInteger("roomId"));
-                                intent.putExtra("userId", loginInfo.getInteger("userId"));
-                                intent.putExtra("sdkAppId", loginInfo.getInteger("sdkAppId"));
-                                intent.putExtra("userSig", loginInfo.getString("userSig"));
-                                intent.putExtra("role", loginInfo.getInteger("role"));
-                                intent.putExtra("appScene", loginInfo.getInteger("appScene"));
-
-                                saveUserInfo(loginInfo.getString("roomId"), loginInfo.getString("userId"));
-                                startActivity(intent);
-
-                            }
-                        });
-                    } else {
-                        showMsg(jo.getString("msg"));
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    showMsg("json数据解析失败");
-                }
-            }
-        });
-    }
-
-    private void closeDialog(){
-        if(alertDialog!=null && alertDialog.isShowing()){
+    private void closeDialog() {
+        if (alertDialog != null && alertDialog.isShowing()) {
             alertDialog.dismiss();
         }
     }
