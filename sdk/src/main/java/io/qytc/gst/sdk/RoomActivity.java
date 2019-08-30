@@ -38,7 +38,6 @@ import io.qytc.gst.bean.DeviceStatusBean;
 import io.qytc.gst.dialog.MoreDialog;
 import io.qytc.gst.dialog.SettingDialog;
 import io.qytc.gst.util.API;
-import io.qytc.gst.util.BeautySettingPanel;
 import io.qytc.gst.util.HttpUtil;
 import io.qytc.gst.view.TRTCVideoViewLayout;
 import okhttp3.Call;

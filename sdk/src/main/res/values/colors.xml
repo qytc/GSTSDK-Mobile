@@ -1,17 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="tencent_tls_ui_white">#FFFFFF</color>
-    <color name="tencent_tls_ui_gray">#444444</color>
-    <color name="tencent_tls_ui_shadowgray">#CCCCCC</color>
-    <color name="tencent_tls_ui_deepgray">#777777</color>
-    <color name="tencent_tls_ui_countryCodeColor">#009900</color>
-    <color name="tencent_tls_ui_black">#000000</color>
-    <color name="tencent_tls_ui_titleBackground">#FFFFFF</color>
-    <color name="tencent_tls_ui_titleFontColor">#000000</color>
-    <color name="tencent_tls_ui_defaultButtonColor">#0099FF</color>
-    <color name="tencent_tls_ui_pressedButtonColor">#0066CC</color>
-    <color name="tencent_tls_ui_background">#EEEEEE</color>
-    <color name="tencent_tls_ui_transparent">#9000</color>
 
     <color name="c1">#0ACCAC</color>
     <color name="c2">#222b48</color>
@@ -118,7 +106,6 @@
     <!--green-->
     <color name="colorGreen">#0accac</color>
 
-
     <color name="colorSendName">#9966cc</color>
     <color name="colorSendName1">#F12B5B</color>
     <color name="colorSendName2">#2B7DE2</color>
@@ -131,13 +118,6 @@
 
     <color name="camera_video_grid_bg_color">#F3F4F6</color>
     <color name="pink">#f90051</color>
-
-    <color name="umeng_white">#ffffff</color>
-    <color name="umeng_blue">#0086DC</color>
-    <color name="umeng_black">#000000</color>
-    <color name="umeng_background">#D4E0E5</color>
-    <color name="umeng_text_color">#575A5C</color>
-    <color name="umeng_divide">#C3C6C9</color>
 
     <color name="edit_red">#f00</color>
     <color name="edit_yellow">#FECD52</color>

@@ -11,10 +11,6 @@
             android:launchMode="singleTask"
             android:screenOrientation="landscape"
             android:windowSoftInputMode="adjustPan" />
-        <activity
-            android:name=".TRTCMainActivity"
-            android:launchMode="singleTask"
-            android:windowSoftInputMode="adjustPan" />
     </application>
 
 </manifest>

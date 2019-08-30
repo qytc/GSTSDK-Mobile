@@ -1,7 +1,7 @@
 package io.qytc.gst.util;
 
 public class API {
-    private static final String SERVER = "192.168.0.103";
+    private static final String SERVER = "ycdj.whqunyu.com";
     private static final String PORT   = "9999";
 
     public static final String HOST = "http://" + SERVER + ":" + PORT;
