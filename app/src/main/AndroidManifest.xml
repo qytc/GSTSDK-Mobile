@@ -24,7 +24,7 @@
         android:theme="@style/AppTheme" >
 
         <activity
-            android:name=".LoginActivity"
+            android:name=".MainActivity"
             android:theme="@style/NewActivityTheme"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="@string/app_name"

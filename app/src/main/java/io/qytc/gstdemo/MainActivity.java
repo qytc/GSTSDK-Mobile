@@ -28,15 +28,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.qytc.gst.sdk.AuthActivity;
+import io.qytc.gst.sdk.LoginActivity;
 import io.qytc.gst.util.API;
 import io.qytc.gst.util.HttpUtil;
+import io.qytc.gst.util.ThirdLoginConstant;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
 
 /**
- * Module:   LoginActivity
+ * Module:   MainActivity
  * <p>
  * Function: 该界面可以让用户输入一个【房间号】和一个【用户名】
  * <p>
@@ -47,11 +49,10 @@ import okhttp3.Response;
  * （2）在真实的使用场景中，房间号大多不是用户手动输入的，而是系统分配的，
  * 比如视频会议中的会议号是会控系统提前预定好的，客服系统中的房间号也是根据客服员工的工号决定的。
  */
-public class LoginActivity extends Activity implements View.OnClickListener {
+public class MainActivity extends Activity implements View.OnClickListener {
     private final static int         REQ_PERMISSION_CODE = 0x1000;
     private              String      mUserId             = "";
     private final        Integer     mSdkAppId           = 1400222844;
-    private              AlertDialog alertDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,12 +80,6 @@ public class LoginActivity extends Activity implements View.OnClickListener {
 
         // 申请动态权限
         checkPermission();
-
-        ProgressDialog.Builder builder = new ProgressDialog.Builder(this);
-        builder.setCancelable(false);
-        builder.setMessage("请稍等...");
-        alertDialog = builder.create();
-
     }
 
     /**
@@ -103,57 +98,18 @@ public class LoginActivity extends Activity implements View.OnClickListener {
      * 参考文档：https://cloud.tencent.com/document/product/647/17275
      */
     private void onJoinRoom(final int roomId, final String userId) {
-        if (alertDialog != null && !alertDialog.isShowing()) {
-            alertDialog.show();
-        }
 
         RadioButton rbAnchor = findViewById(R.id.rb_anchor);
-        final int role = rbAnchor.isChecked() ? TRTCCloudDef.TRTCRoleAnchor : TRTCCloudDef.TRTCRoleAudience;
+        final int role = rbAnchor.isChecked() ? ThirdLoginConstant.Anchor : ThirdLoginConstant.Audience;
 
-        RadioButton rbLive = findViewById(R.id.rb_live);
-        final int appScene = rbLive.isChecked() ? TRTCCloudDef.TRTC_APP_SCENE_LIVE : TRTCCloudDef.TRTC_APP_SCENE_VIDEOCALL;
+        Intent intent = new Intent(getContext(), LoginActivity.class);
+        intent.putExtra(ThirdLoginConstant.ROOMID, roomId);
+        intent.putExtra(ThirdLoginConstant.USERID, userId);
+        intent.putExtra(ThirdLoginConstant.SDKAPPID, mSdkAppId);
+        intent.putExtra(ThirdLoginConstant.ROLE, role);
 
-        JSONObject jo = new JSONObject();
-        jo.put("appId",mSdkAppId);
-        jo.put("userId",userId);
-        HttpUtil.getInstance(API.generateUserSig).post(jo.toJSONString(), new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                closeDialog();
-                showMsg("请求签名发生错误:" + e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                closeDialog();
-                if (response.code() == 200) {
-                    JSONObject object = JSON.parseObject(response.body().string());
-                    if (object.get("code").equals("0")) {
-                        String userSig = object.getString("data");
-                        Intent intent = new Intent(getContext(), AuthActivity.class);
-                        intent.putExtra("roomId", roomId);
-                        intent.putExtra("userId", userId);
-                        intent.putExtra("sdkAppId", mSdkAppId);
-                        intent.putExtra("userSig", userSig);
-                        intent.putExtra("role", role);
-                        intent.putExtra("appScene", appScene);
-
-                        saveUserInfo(String.valueOf(roomId), userId);
-                        startActivity(intent);
-                    } else {
-                        showMsg(object.getString("msg"));
-                    }
-                } else {
-                    showMsg("从服务器获取userSig失败");
-                }
-            }
-        });
-    }
-
-    private void closeDialog() {
-        if (alertDialog != null && alertDialog.isShowing()) {
-            alertDialog.dismiss();
-        }
+        saveUserInfo(String.valueOf(roomId), userId);
+        startActivity(intent);
     }
 
     private void startJoinRoom() {
@@ -197,7 +153,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
                 permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
             }
             if (permissions.size() != 0) {
-                ActivityCompat.requestPermissions(LoginActivity.this,
+                ActivityCompat.requestPermissions(MainActivity.this,
                         (String[]) permissions.toArray(new String[0]),
                         REQ_PERMISSION_CODE);
                 return false;
@@ -271,14 +227,5 @@ public class LoginActivity extends Activity implements View.OnClickListener {
                 break;
             }
         }
-    }
-
-    private void showMsg(final String msg) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(LoginActivity.this, msg, Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 }
