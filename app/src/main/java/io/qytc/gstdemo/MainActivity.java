@@ -2,8 +2,6 @@ package io.qytc.gstdemo;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -18,23 +16,13 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.Toast;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.tencent.trtc.TRTCCloud;
-import com.tencent.trtc.TRTCCloudDef;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.qytc.gst.sdk.AuthActivity;
 import io.qytc.gst.sdk.LoginActivity;
-import io.qytc.gst.util.API;
-import io.qytc.gst.util.HttpUtil;
 import io.qytc.gst.util.ThirdLoginConstant;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.Response;
 
 
 /**
