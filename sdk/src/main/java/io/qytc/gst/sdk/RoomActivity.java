@@ -241,7 +241,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         ivSpeak.setImageResource(role == TRTCCloudDef.TRTCRoleAnchor ? R.mipmap.speak_enable : R.mipmap.speak_disable);
 
         ivVoice = findViewById(R.id.iv_mic);
-        ivVoice.setImageResource(role == TRTCCloudDef.TRTCRoleAnchor ? R.mipmap.remote_audio_enable : R.mipmap.remote_audio_disable);
+        ivVoice.setImageResource(role == TRTCCloudDef.TRTCRoleAnchor ? R.mipmap.mic_enable : R.mipmap.mic_disable);
 
         ivCamera = findViewById(R.id.iv_camera);
         ivCamera.setImageResource(role == TRTCCloudDef.TRTCRoleAnchor ? R.mipmap.remote_video_enable : R.mipmap.remote_video_disable);
@@ -1255,13 +1255,19 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     class EchoWebSocketListener extends WebSocketListener {
 
         public boolean webSocketConnect;
-
+        //确认允许发言
         public static final String CONFIRM_SPEAK  = "confirm_speak";
+        //控制麦克风
         public static final String CONTROL_MIC    = "control_mic";
+        //控制摄像头
         public static final String CONTROL_CAMERA = "control_camera";
+        //邀请发言
         public static final String INVITE_SPEAK   = "invite_speak";
+        //取消发言
         public static final String CANCEL_SPEAK   = "cancel_speak";
+        //多画面
         public static final String MULTI_SCREEN   = "multi_screen";
+        //强制退出
         public static final String FORCE_EXIT     = "force_exit";
 
         @Override
