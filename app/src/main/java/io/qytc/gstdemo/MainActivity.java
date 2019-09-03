@@ -16,8 +16,6 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.Toast;
 
-import com.tencent.trtc.TRTCCloud;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -183,7 +181,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     private void loadUserInfo(EditText etRoomId, EditText etUserId) {
         try {
-            TRTCCloud.getSDKVersion();
             SharedPreferences shareInfo = this.getSharedPreferences("per_data", 0);
             mUserId = shareInfo.getString("userId", "");
             String roomId = shareInfo.getString("roomId", "");
