@@ -218,7 +218,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     public TXCloudVideoView getCloudVideoViewByUseId(String userId) {
         for (TXCloudVideoView videoView : mVideoViewList) {
             String tempUserID = videoView.getUserId();
-            if (tempUserID != null && tempUserID.equalsIgnoreCase(userId)) {
+            if (tempUserID != null && tempUserID.contains(userId)) {
                 return videoView;
             }
         }
@@ -503,13 +503,13 @@ public class TRTCVideoViewLayout extends RelativeLayout {
                             }
                         }
                     }
-                    showToolbarButtons(videoView, false);
+//                    showToolbarButtons(videoView, false);
                 } else {
                     if (videoView.getVisibility() == VISIBLE) {
                         if (layoutToolbar != null) {
                             layoutToolbar.bringToFront();
                             layoutToolbar.setVisibility(VISIBLE);
-                            showToolbarButtons(videoView, mMode == MODE_GRID);
+//                            showToolbarButtons(videoView, mMode == MODE_GRID);
                         }
                     } else {
                         layoutToolbar.setVisibility(GONE);
@@ -531,7 +531,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
                 if (layoutToolbar != null) {
                     layoutToolbar.bringToFront();
                     layoutToolbar.setVisibility(VISIBLE);
-                    showToolbarButtons(videoView, mMode == MODE_GRID);
+//                    showToolbarButtons(videoView, mMode == MODE_GRID);
                 }
             }
         }
@@ -539,7 +539,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
 
     private void freshToolbarLayoutOnMemberLeave(TXCloudVideoView videoView) {
         showAudioVolumeProgressBar(videoView, false);
-        showToolbarButtons(videoView, false);
+//        showToolbarButtons(videoView, false);
         showNoVideoLayout(videoView, false);
         clearVideoViewExtraData(videoView);
     }
