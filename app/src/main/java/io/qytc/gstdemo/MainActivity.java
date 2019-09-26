@@ -22,19 +22,6 @@ import java.util.List;
 import io.qytc.gst.sdk.LoginActivity;
 import io.qytc.gst.util.ThirdLoginConstant;
 
-
-/**
- * Module:   MainActivity
- * <p>
- * Function: 该界面可以让用户输入一个【房间号】和一个【用户名】
- * <p>
- * Notice:
- * <p>
- * （1）房间号为数字类型，用户名为字符串类型
- * <p>
- * （2）在真实的使用场景中，房间号大多不是用户手动输入的，而是系统分配的，
- * 比如视频会议中的会议号是会控系统提前预定好的，客服系统中的房间号也是根据客服员工的工号决定的。
- */
 public class MainActivity extends Activity implements View.OnClickListener {
     private final static int         REQ_PERMISSION_CODE = 0x1000;
     private              String      mUserId             = "";
@@ -68,21 +55,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         checkPermission();
     }
 
-    /**
-     * Function: 读取用户输入，并创建（或加入）音视频房间
-     * <p>
-     * 此段示例代码最主要的作用是组装 TRTC SDK 进房所需的 TRTCParams
-     * <p>
-     * TRTCParams.sdkAppId => 可以在腾讯云实时音视频控制台（https://console.cloud.tencent.com/rav）获取
-     * TRTCParams.userId   => 此处即用户输入的用户名，它是一个字符串
-     * TRTCParams.roomId   => 此处即用户输入的音视频房间号，比如 125
-     * TRTCParams.userSig  => 此处示例代码展示了两种获取 usersig 的方式，一种是从【控制台】获取，一种是从【服务器】获取
-     * <p>
-     * （1）控制台获取：可以获得几组已经生成好的 userid 和 usersig，他们会被放在一个 json 格式的配置文件中，仅适合调试使用
-     * （2）服务器获取：直接在服务器端用我们提供的源代码，根据 userid 实时计算 usersig，这种方式安全可靠，适合线上使用
-     * <p>
-     * 参考文档：https://cloud.tencent.com/document/product/647/17275
-     */
+
     private void onJoinRoom(final int roomId, final String userId) {
 
         RadioButton rbAnchor = findViewById(R.id.rb_anchor);

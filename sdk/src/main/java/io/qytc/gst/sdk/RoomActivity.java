@@ -53,17 +53,6 @@ import okhttp3.WebSocketListener;
 import okio.ByteString;
 
 
-/**
- * Module:   RoomActivity
- * <p>
- * Function: 使用TRTC SDK完成 1v1 和 1vn 的视频通话功能
- * <p>
- * 1. 支持九宫格平铺和前后叠加两种不同的视频画面布局方式，该部分由 TRTCVideoViewLayout 来计算每个视频画面的位置排布和大小尺寸
- * <p>
- * 2. 支持对视频通话的分辨率、帧率和流畅模式进行调整，该部分由 SettingDialog 来实现
- * <p>
- * 3. 创建或者加入某一个通话房间，需要先指定 roomId 和 userId，这部分由 TRTCNewActivity 来实现
- */
 public class RoomActivity extends Activity implements View.OnClickListener,
         SettingDialog.ISettingListener,
         MoreDialog.IMoreListener,
@@ -82,9 +71,9 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     private TRTCVideoViewLayout mVideoViewLayout;
 
     private AlertDialog exitDialog;
-    private TRTCCloudDef.TRTCParams trtcParams;     /// TRTC SDK 视频通话房间进入所必须的参数
-    private TRTCCloud trtcCloud;              /// TRTC SDK 实例对象
-    private TRTCCloudListenerImpl trtcListener;    /// TRTC SDK 回调监听
+    private TRTCCloudDef.TRTCParams trtcParams;
+    private TRTCCloud trtcCloud;
+    private TRTCCloudListenerImpl trtcListener;
 
     private int mBeautyLevel = 0;
     private int mWhiteningLevel = 0;
@@ -225,9 +214,6 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         }
     }
 
-    /**
-     * 初始化界面控件，包括主要的视频显示View，以及底部的一排功能按钮
-     */
     private void initView() {
 
         initClickableLayout(R.id.ll_speak);
@@ -278,15 +264,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         return layout;
     }
 
-    /**
-     * 设置视频通话的视频参数：需要 SettingDialog 提供的分辨率、帧率和流畅模式等参数
-     */
     private void setTRTCCloudParam() {
 
-        // 大画面的编码器参数设置
-        // 设置视频编码参数，包括分辨率、帧率、码率等等，这些编码参数来自于 SettingDialog 的设置
-        // 注意（1）：不要在码率很低的情况下设置很高的分辨率，会出现较大的马赛克
-        // 注意（2）：不要设置超过25FPS以上的帧率，因为电影才使用24FPS，我们一般推荐15FPS，这样能将更多的码率分配给画质
         TRTCCloudDef.TRTCVideoEncParam encParam = new TRTCCloudDef.TRTCVideoEncParam();
         encParam.videoResolution = settingDlg.getResolution();
         encParam.videoFps = settingDlg.getVideoFps();
@@ -299,9 +278,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         qosParam.preference = settingDlg.getQosPreference();
         trtcCloud.setNetworkQosParam(qosParam);
 
-        //小画面的编码器参数设置
-        //TRTC SDK 支持大小两路画面的同时编码和传输，这样网速不理想的用户可以选择观看小画面
-        //注意：iPhone & Android 不要开启大小双路画面，非常浪费流量，大小路画面适合 Windows 和 MAC 这样的有线网络环境
+
         TRTCCloudDef.TRTCVideoEncParam smallParam = new TRTCCloudDef.TRTCVideoEncParam();
         smallParam.videoResolution = TRTCCloudDef.TRTC_VIDEO_RESOLUTION_160_90;
         smallParam.videoFps = settingDlg.getVideoFps();
@@ -659,7 +636,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
 
             if (errCode <= TXLiteAVCode.ERR_SERVER_SSO_SIG_EXPIRED &&
                     errCode >= TXLiteAVCode.ERR_SERVER_SSO_INTERNAL_ERROR) {
-                // 错误参考 https://cloud.tencent.com/document/product/269/1671#.E5.B8.90.E5.8F.B7.E7.B3.BB.E7.BB.9F
+
                 Toast.makeText(activity, "进房失败，userSig错误:" + errCode + "[" + errMsg + "]", Toast.LENGTH_SHORT).show();
                 activity.exitRoom();
                 return;
@@ -948,22 +925,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
 
     @Override
     public void onClickButtonGetPlayUrl() {
-        if (trtcParams == null) {
-            return;
-        }
 
-        String strStreamID = "3891_" + stringToMd5("" + trtcParams.roomId + "_" + trtcParams.userId + "_main");
-        String strPlayUrl = "http://3891.liveplay.myqcloud.com/live/" + strStreamID + ".flv";
-
-//        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-//        ClipData clipData = ClipData.newPlainText("Label", strPlayUrl);
-//        cm.setPrimaryClip(clipData);
-//        Toast.makeText(getApplicationContext(), "播放地址已复制到系统剪贴板！", Toast.LENGTH_SHORT).show();
-
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.putExtra(Intent.EXTRA_TEXT, strPlayUrl);
-        intent.setType("text/plain");
-        startActivity(Intent.createChooser(intent, "分享"));
     }
 
     @Override
