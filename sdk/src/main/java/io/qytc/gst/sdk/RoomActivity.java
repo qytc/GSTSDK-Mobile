@@ -1312,6 +1312,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         @Override
                         public void run() {
                             onEnableAudio(result == 1);
+                            onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
                         }
                     });
                     showMsg("主席已" + (result == 1 ? "打开" : "关闭") + "您的麦克风");
@@ -1328,6 +1329,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         @Override
                         public void run() {
                             onEnableVideo(result == 1);
+                            onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
                         }
                     });
                     showMsg("主席已" + (result == 1 ? "打开" : "关闭") + "您的摄像头");
