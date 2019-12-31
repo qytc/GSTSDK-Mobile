@@ -737,6 +737,12 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 userStream.userId = userId;
                 userStream.streamType = TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB;
                 if (available) {
+                    if (null != activity.mVideoViewLayout.getCloudVideoViewByUseId(userId+TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG)){
+                        //停止观看画面
+                        activity.trtcCloud.stopRemoteView(userId);
+                        activity.mVideoViewLayout.onMemberLeave(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                        activity.mVideosInRoom.remove(userStream);
+                    }
                     final TXCloudVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB);
                     if (renderView != null) {
                         // 启动远程画面的解码和显示逻辑，FillMode 可以设置是否显示黑边

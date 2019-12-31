@@ -25,7 +25,7 @@ import io.qytc.gst.util.ThirdLoginConstant;
 public class MainActivity extends Activity implements View.OnClickListener {
     private final static int         REQ_PERMISSION_CODE = 0x1000;
     private              String      mUserId             = "";
-    private final        Integer     mSdkAppId           = 1400210901;
+    private final        Integer     mSdkAppId           = 1400222844;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
