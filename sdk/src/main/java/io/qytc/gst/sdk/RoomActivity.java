@@ -102,6 +102,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     }
                     break;
             }
+
         }
     };
     private EchoWebSocketListener webSocketListener;
@@ -192,6 +193,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             exitDialog.dismiss();
         }
         if (trtcCloud != null) {
+            trtcCloud.exitRoom();
             trtcCloud.setListener(null);
             TRTCCloud.destroySharedInstance();
         }
