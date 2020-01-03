@@ -212,8 +212,15 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         if (exitDialog != null && exitDialog.isShowing()) {
             exitDialog.dismiss();
         }
-    }
 
+        if (role == TRTCCloudDef.TRTCRoleAnchor) {
+            onEnableVideo(false);
+        }
+
+        if (role == TRTCCloudDef.TRTCRoleAnchor) {
+            onEnableAudio(false);
+        }
+    }
 
     private void initView() {
 
