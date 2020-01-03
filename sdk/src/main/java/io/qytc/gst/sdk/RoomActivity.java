@@ -100,6 +100,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     if (webSocketListener.webSocketConnect) {
                         mHandler.sendEmptyMessageDelayed(1, 3000);
                     }
+
                     break;
             }
 
@@ -419,6 +420,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 mDeviceStatusBean.getData().setSpeaker(0);
+                mDeviceStatusBean.getData().setMic(0);
+                mDeviceStatusBean.getData().setCamera(0);
                 deviceStatus = JSON.toJSONString(mDeviceStatusBean);
                 webSocket.send(deviceStatus);
                 runOnUiThread(new Runnable() {
@@ -427,6 +430,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         role = TRTCCloudDef.TRTCRoleAudience;
                         onChangeRole(role);
                         onEnableSpeak(false);
+                        closeVideoLayout(false);
                     }
                 });
             }
@@ -485,7 +489,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         ivSpeak.setImageResource(enableSpeak ? R.mipmap.speak_enable : R.mipmap.speak_disable);
         this.bEanbleSpeak = enableSpeak;
         onEnableAudio(enableSpeak);
-        closeVideoLayout(enableSpeak);
+        //closeVideoLayout(enableSpeak);
     }
 
     /**
@@ -673,6 +677,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     renderView.setVisibility(View.VISIBLE);
                     activity.trtcCloud.setDebugViewMargin(userId, new TRTCCloud.TRTCViewMargin(0.0f, 0.0f, 0.1f, 0.0f));
                 }
+
                 activity.enableAudioVolumeEvaluation(activity.moreDlg.isAudioVolumeEvaluation());
             }
         }
@@ -1235,8 +1240,10 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     }
 
     private void startWebSocket() {
-        OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        mOkHttpClient = builder.build();
+        if (null==mOkHttpClient){
+            OkHttpClient.Builder builder = new OkHttpClient.Builder();
+            mOkHttpClient = builder.build();
+        }
 
         Request request = new Request.Builder().url(API.WS_HOST).build();
         webSocketListener = new EchoWebSocketListener();
@@ -1294,9 +1301,6 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     result = jo.getIntValue("result");
 
                     mDeviceStatusBean.getData().setSpeaker(result);
-                    deviceStatus = JSON.toJSONString(mDeviceStatusBean);
-                    webSocket.send(deviceStatus);
-
                     if (result == 1) {
                         runOnUiThread(new Runnable() {
                             @Override
@@ -1304,14 +1308,36 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                                 role=TRTCCloudDef.TRTCRoleAnchor;
                                 onChangeRole(role);
                                 onEnableSpeak(true);
+                                closeVideoLayout(true);
+
+
                             }
                         });
+                        mDeviceStatusBean.getData().setMic(result);
+                        mDeviceStatusBean.getData().setCamera(result);
                     }
+                    deviceStatus = JSON.toJSONString(mDeviceStatusBean);
+                    webSocket.send(deviceStatus);
                     showMsg("主席已" + (result == 1 ? "同意" : "拒绝") + "您的发言申请");
                     break;
                 case CONTROL_MIC: {//主席端 打开/关闭 分会场麦克风
                     result = jo.getIntValue("result");
+                    String isAllControl = jo.getString("allMute");
+                    if (!TextUtils.isEmpty(isAllControl)&&"mute".equalsIgnoreCase(isAllControl)){
+                        if (result == 0){
+                            controlMic(result+1,true);
+                        }else if (result == 1){
+                            controlMic(result-1,true);
+                        }
+                    }else{
+                        controlMic(result,false);
+                    }
+                }
+                break;
+                case CONTROL_CAMERA://主席端 打开/关闭 分会场摄像头
+                    result = jo.getIntValue("result");
 
+                    mDeviceStatusBean.getData().setCamera(result);
                     mDeviceStatusBean.getData().setMic(result);
                     deviceStatus = JSON.toJSONString(mDeviceStatusBean);
                     webSocket.send(deviceStatus);
@@ -1319,24 +1345,9 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            onEnableAudio(result == 1);
-                            onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
-                        }
-                    });
-                    showMsg("主席已" + (result == 1 ? "打开" : "关闭") + "您的麦克风");
-                }
-                break;
-                case CONTROL_CAMERA://主席端 打开/关闭 分会场摄像头
-                    result = jo.getIntValue("result");
-
-                    mDeviceStatusBean.getData().setCamera(result);
-                    deviceStatus = JSON.toJSONString(mDeviceStatusBean);
-                    webSocket.send(deviceStatus);
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
                             onEnableVideo(result == 1);
+                            onEnableSpeak(result == 1);
+                            onEnableAudio(result == 1);
                             onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
                         }
                     });
@@ -1414,5 +1425,28 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             webSocketConnect = false;
             startWebSocket();
         }
+    }
+
+    private void controlMic(final int result,boolean isAllMute) {
+        mDeviceStatusBean.getData().setMic(result);
+        deviceStatus = JSON.toJSONString(mDeviceStatusBean);
+        webSocket.send(deviceStatus);
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                onEnableAudio(result == 1);
+                //onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
+
+                onEnableSpeak(result == 1);
+            }
+        });
+
+        if (isAllMute){
+            showMsg("主席已" + (result == 1 ? "关闭" : "打开") + "全场静音");
+        }else{
+            showMsg("主席已" + (result == 1 ? "打开" : "关闭") + "您的麦克风");
+        }
+
     }
 }
