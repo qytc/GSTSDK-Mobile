@@ -20,7 +20,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.tencent.liteav.TXLiteAVCode;
 import com.tencent.rtmp.ui.TXCloudVideoView;
@@ -34,8 +33,6 @@ import java.lang.ref.WeakReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 
 import io.qytc.gst.bean.DeviceStatusBean;
 import io.qytc.gst.dialog.MoreDialog;
@@ -58,29 +55,29 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         MoreDialog.IMoreListener,
         TRTCVideoViewLayout.ITRTCVideoViewLayoutListener {
 
-    private final static String TAG = RoomActivity.class.getSimpleName();
-    private Context mContext;
-    private boolean bEnableVideo = true;
-    private boolean bEnableAudio = true;
-    private boolean bEanbleSpeak = false;
+    private final static String  TAG          = RoomActivity.class.getSimpleName();
+    private              Context mContext;
+    private              boolean bEnableVideo = true;
+    private              boolean bEnableAudio = true;
+    private              boolean bEanbleSpeak = false;
 
-    private TextView tvRoomId;
+    private TextView  tvRoomId;
     private ImageView ivSpeak, ivCamera, ivVoice;
-    private SettingDialog settingDlg;
-    private MoreDialog moreDlg;
+    private SettingDialog       settingDlg;
+    private MoreDialog          moreDlg;
     private TRTCVideoViewLayout mVideoViewLayout;
 
-    private AlertDialog exitDialog;
-    private TRTCCloudDef.TRTCParams trtcParams;
-    private TRTCCloud trtcCloud;
-    private TRTCCloudListenerImpl trtcListener;
+    private AlertDialog             exitDialog;
+    private TRTCCloudDef.TRTCParams trtcParams;     /// TRTC SDK 视频通话房间进入所必须的参数
+    private TRTCCloud               trtcCloud;              /// TRTC SDK 实例对象
+    private TRTCCloudListenerImpl   trtcListener;    /// TRTC SDK 回调监听
 
-    private int mBeautyLevel = 0;
+    private int mBeautyLevel    = 0;
     private int mWhiteningLevel = 0;
-    private int mRuddyLevel = 0;
-    private int mBeautyStyle = TRTCCloudDef.TRTC_BEAUTY_STYLE_NATURE;
-    private int mSdkAppId = -1;
-    private int mAppScene = TRTCCloudDef.TRTC_APP_SCENE_LIVE;
+    private int mRuddyLevel     = 0;
+    private int mBeautyStyle    = TRTCCloudDef.TRTC_BEAUTY_STYLE_NATURE;
+    private int mSdkAppId       = -1;
+    private int mAppScene       = TRTCCloudDef.TRTC_APP_SCENE_LIVE;
     private int roomId;
 
     private String selfUserId = null;
@@ -88,11 +85,11 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     private String deviceStatus;
 
     private OkHttpClient mOkHttpClient;
-    private WebSocket webSocket;
+    private WebSocket    webSocket;
 
     private DeviceStatusBean mDeviceStatusBean = new DeviceStatusBean();
 
-    private Handler mHandler = new Handler(Looper.getMainLooper()) {
+    private Handler               mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
@@ -108,11 +105,11 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         }
     };
     private EchoWebSocketListener webSocketListener;
-    private int role;
+    private int                   role;
 
     private static class VideoStream {
         String userId;
-        int streamType;
+        int    streamType;
 
         public boolean equals(Object obj) {
             if (obj == null || userId == null) return false;
@@ -120,7 +117,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             return (this.streamType == stream.streamType && this.userId.equals(stream.userId));
         }
     }
-    HashMap<String,String> map=new HashMap<>();
+
     private ArrayList<VideoStream> mVideosInRoom = new ArrayList<>();
 
     @Override
@@ -214,6 +211,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         }
     }
 
+
     private void initView() {
 
         initClickableLayout(R.id.ll_speak);
@@ -264,8 +262,15 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         return layout;
     }
 
+    /**
+     * 设置视频通话的视频参数：需要 SettingDialog 提供的分辨率、帧率和流畅模式等参数
+     */
     private void setTRTCCloudParam() {
 
+        // 大画面的编码器参数设置
+        // 设置视频编码参数，包括分辨率、帧率、码率等等，这些编码参数来自于 SettingDialog 的设置
+        // 注意（1）：不要在码率很低的情况下设置很高的分辨率，会出现较大的马赛克
+        // 注意（2）：不要设置超过25FPS以上的帧率，因为电影才使用24FPS，我们一般推荐15FPS，这样能将更多的码率分配给画质
         TRTCCloudDef.TRTCVideoEncParam encParam = new TRTCCloudDef.TRTCVideoEncParam();
         encParam.videoResolution = settingDlg.getResolution();
         encParam.videoFps = settingDlg.getVideoFps();
@@ -278,7 +283,9 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         qosParam.preference = settingDlg.getQosPreference();
         trtcCloud.setNetworkQosParam(qosParam);
 
-
+        //小画面的编码器参数设置
+        //TRTC SDK 支持大小两路画面的同时编码和传输，这样网速不理想的用户可以选择观看小画面
+        //注意：iPhone & Android 不要开启大小双路画面，非常浪费流量，大小路画面适合 Windows 和 MAC 这样的有线网络环境
         TRTCCloudDef.TRTCVideoEncParam smallParam = new TRTCCloudDef.TRTCVideoEncParam();
         smallParam.videoResolution = TRTCCloudDef.TRTC_VIDEO_RESOLUTION_160_90;
         smallParam.videoFps = settingDlg.getVideoFps();
@@ -289,9 +296,6 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         trtcCloud.setPriorRemoteVideoStreamType(settingDlg.priorSmall ? TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SMALL : TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
     }
 
-    /**
-     * 加入视频房间：需要 TRTCNewViewActivity 提供的  TRTCParams 函数
-     */
     private void enterRoom() {
         // 预览前配置默认参数
         setTRTCCloudParam();
@@ -636,7 +640,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
 
             if (errCode <= TXLiteAVCode.ERR_SERVER_SSO_SIG_EXPIRED &&
                     errCode >= TXLiteAVCode.ERR_SERVER_SSO_INTERNAL_ERROR) {
-
+                // 错误参考 https://cloud.tencent.com/document/product/269/1671#.E5.B8.90.E5.8F.B7.E7.B3.BB.E7.BB.9F
                 Toast.makeText(activity, "进房失败，userSig错误:" + errCode + "[" + errMsg + "]", Toast.LENGTH_SHORT).show();
                 activity.exitRoom();
                 return;
@@ -666,10 +670,6 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     // 设置仪表盘数据显示
                     renderView.setVisibility(View.VISIBLE);
                     activity.trtcCloud.setDebugViewMargin(userId, new TRTCCloud.TRTCViewMargin(0.0f, 0.0f, 0.1f, 0.0f));
-
-                    TextView viewById = renderView.findViewById(R.id.remoteUserName_tv);
-                    viewById.setText(activity.map.get(userId));
-
                 }
                 activity.enableAudioVolumeEvaluation(activity.moreDlg.isAudioVolumeEvaluation());
             }
@@ -737,32 +737,32 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 userStream.userId = userId;
                 userStream.streamType = TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB;
                 if (available) {
-
-                    final TXCloudVideoView renderView = activity.mVideoViewLayout.getCloudVideoViewByUseId(userId);//activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB);
+                    if (null != activity.mVideoViewLayout.getCloudVideoViewByUseId(userId+TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG)){
+                        //停止观看画面
+                        activity.trtcCloud.stopRemoteView(userId);
+                        activity.mVideoViewLayout.onMemberLeave(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                        activity.mVideosInRoom.remove(userStream);
+                    }
+                    final TXCloudVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB);
                     if (renderView != null) {
                         // 启动远程画面的解码和显示逻辑，FillMode 可以设置是否显示黑边
                         activity.trtcCloud.setRemoteSubStreamViewFillMode(userId, TRTCCloudDef.TRTC_VIDEO_RENDER_MODE_FIT);
                         activity.trtcCloud.startRemoteSubStreamView(userId, renderView);
-                        activity.trtcCloud.stopRemoteView(userId);
+
                         activity.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                renderView.setUserId(userId);
+                                renderView.setUserId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB);
                             }
                         });
                     }
                     activity.mVideosInRoom.add(userStream);
                 } else {
                     activity.trtcCloud.stopRemoteSubStreamView(userId);
-
-                    activity.mVideoViewLayout.onMemberLeave(userId);
+                    activity.mVideoViewLayout.onMemberLeave(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB);
                     activity.mVideosInRoom.remove(userStream);
-
-                    activity.mVideoViewLayout.onMemberEnter(userId);
-                    activity.trtcCloud.startRemoteView(userId,activity.mVideoViewLayout.getCloudVideoViewByUseId(userId));
-
                 }
-
+                activity.updateCloudMixtureParams();
             }
         }
 
@@ -925,7 +925,22 @@ public class RoomActivity extends Activity implements View.OnClickListener,
 
     @Override
     public void onClickButtonGetPlayUrl() {
+        if (trtcParams == null) {
+            return;
+        }
 
+        String strStreamID = "3891_" + stringToMd5("" + trtcParams.roomId + "_" + trtcParams.userId + "_main");
+        String strPlayUrl = "http://3891.liveplay.myqcloud.com/live/" + strStreamID + ".flv";
+
+//        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+//        ClipData clipData = ClipData.newPlainText("Label", strPlayUrl);
+//        cm.setPrimaryClip(clipData);
+//        Toast.makeText(getApplicationContext(), "播放地址已复制到系统剪贴板！", Toast.LENGTH_SHORT).show();
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.putExtra(Intent.EXTRA_TEXT, strPlayUrl);
+        intent.setType("text/plain");
+        startActivity(Intent.createChooser(intent, "分享"));
     }
 
     @Override
@@ -1221,7 +1236,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         mOkHttpClient = builder.build();
 
-        Request request = new Request.Builder().url(API.WS_HOST + "?roomNo=" + roomId).build();
+        Request request = new Request.Builder().url(API.WS_HOST).build();
         webSocketListener = new EchoWebSocketListener();
         webSocket = mOkHttpClient.newWebSocket(request, webSocketListener);
         mOkHttpClient.dispatcher().executorService().shutdown();
@@ -1231,20 +1246,19 @@ public class RoomActivity extends Activity implements View.OnClickListener,
 
         public boolean webSocketConnect;
         //确认允许发言
-        public static final String CONFIRM_SPEAK = "confirm_speak";
+        public static final String CONFIRM_SPEAK  = "confirm_speak";
         //控制麦克风
-        public static final String CONTROL_MIC = "control_mic";
+        public static final String CONTROL_MIC    = "control_mic";
         //控制摄像头
         public static final String CONTROL_CAMERA = "control_camera";
         //邀请发言
-        public static final String INVITE_SPEAK = "invite_speak";
+        public static final String INVITE_SPEAK   = "invite_speak";
         //取消发言
-        public static final String CANCEL_SPEAK = "cancel_speak";
+        public static final String CANCEL_SPEAK   = "cancel_speak";
         //多画面
-        public static final String MULTI_SCREEN = "multi_screen";
+        public static final String MULTI_SCREEN   = "multi_screen";
         //强制退出
-        public static final String FORCE_EXIT = "force_exit";
-        public static final String JOIN_ROOM = "join_room";
+        public static final String FORCE_EXIT     = "force_exit";
 
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
@@ -1285,7 +1299,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                role = TRTCCloudDef.TRTCRoleAnchor;
+                                role=TRTCCloudDef.TRTCRoleAnchor;
                                 onChangeRole(role);
                                 onEnableSpeak(true);
                             }
@@ -1304,6 +1318,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         @Override
                         public void run() {
                             onEnableAudio(result == 1);
+                            onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
                         }
                     });
                     showMsg("主席已" + (result == 1 ? "打开" : "关闭") + "您的麦克风");
@@ -1320,6 +1335,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         @Override
                         public void run() {
                             onEnableVideo(result == 1);
+                            onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
                         }
                     });
                     showMsg("主席已" + (result == 1 ? "打开" : "关闭") + "您的摄像头");
@@ -1360,17 +1376,10 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 case MULTI_SCREEN://多画面
                     String users = jo.getString("acctno");
                     final String[] userIds = users.split(",");
-                    final String[] arrs;
-                    if(userIds.length>4){
-                        arrs= Arrays.copyOf(userIds,4);
-                    }else {
-                        arrs=userIds;
-                    }
-
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            swapViewByIndex(arrs);
+                            swapViewByIndex(userIds);
                         }
                     });
                     break;
@@ -1378,13 +1387,6 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     String msg = jo.getString("msg");
                     showMsg(msg);
                     exitRoom();
-                    break;
-                case JOIN_ROOM:
-                    JSONArray memberList = jo.getJSONArray("memberList");
-                    for (Object o : memberList) {
-                        JSONObject jo1=(JSONObject)o;
-                        map.put(jo1.getString("acctno"),jo1.getString("name"));
-                    }
                     break;
             }
         }

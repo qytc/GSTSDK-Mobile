@@ -55,7 +55,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         checkPermission();
     }
 
-
     private void onJoinRoom(final int roomId, final String userId) {
 
         RadioButton rbAnchor = findViewById(R.id.rb_anchor);
