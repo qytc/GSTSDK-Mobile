@@ -25,6 +25,6 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation project(path: ':sdk')
-//    implementation 'com.github.qytc:GSTSDK-Mobile:1.1'
+    //implementation project(path: ':sdk')
+    implementation 'com.github.qytc:GSTSDK-Mobile:1.5'
 }

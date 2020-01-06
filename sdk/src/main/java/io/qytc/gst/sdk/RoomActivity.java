@@ -437,7 +437,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         role = TRTCCloudDef.TRTCRoleAudience;
                         onChangeRole(role);
                         onEnableSpeak(false);
-                        closeVideoLayout(false);
+                        //closeVideoLayout(false);
                     }
                 });
             }
@@ -496,7 +496,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         ivSpeak.setImageResource(enableSpeak ? R.mipmap.speak_enable : R.mipmap.speak_disable);
         this.bEanbleSpeak = enableSpeak;
         onEnableAudio(enableSpeak);
-        //closeVideoLayout(enableSpeak);
+        closeVideoLayout(enableSpeak);
     }
 
     /**
@@ -1315,7 +1315,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                                 role=TRTCCloudDef.TRTCRoleAnchor;
                                 onChangeRole(role);
                                 onEnableSpeak(true);
-                                closeVideoLayout(true);
+                                //closeVideoLayout(true);
 
 
                             }
