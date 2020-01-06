@@ -33,24 +33,24 @@ import io.qytc.gst.sdk.R;
  * Function: 用于计算每个视频画面的位置排布和大小尺寸
  */
 public class TRTCVideoViewLayout extends RelativeLayout {
-    private final static String  TAG        = TRTCVideoViewLayout.class.getSimpleName();
-    public static final  int     MODE_FLOAT = 1;  // 前后堆叠模式
-    public static final  int     MODE_GRID  = 2;  // 九宫格模式
-    public static final  int     MAX_USER   = 4;
-    private              Context mContext;
+    private final static String TAG = TRTCVideoViewLayout.class.getSimpleName();
+    public static final int MODE_FLOAT = 1;  // 前后堆叠模式
+    public static final int MODE_GRID = 2;  // 九宫格模式
+    public static final int MAX_USER = 4;
+    private Context mContext;
 
     public ArrayList<TXCloudVideoView> getVideoViewList() {
         return mVideoViewList;
     }
 
-    private ArrayList<TXCloudVideoView>            mVideoViewList;
+    private ArrayList<TXCloudVideoView> mVideoViewList;
     private ArrayList<RelativeLayout.LayoutParams> mFloatParamList;
-    private ArrayList<LayoutParams>                mGrid4ParamList;
-    private RelativeLayout                         mLayout;
-    private int                                    mCount = 0;
-    private int                                    mMode;
+    private ArrayList<LayoutParams> mGrid4ParamList;
+    private RelativeLayout mLayout;
+    private int mCount = 0;
+    private int mMode;
 
-    private String                                      mSelfUserId;
+    private String mSelfUserId;
     private WeakReference<ITRTCVideoViewLayoutListener> mListener = new WeakReference<>(null);
 
     HashMap<Integer, Integer> mapNetworkQuality = null;
@@ -227,7 +227,9 @@ public class TRTCVideoViewLayout extends RelativeLayout {
 
     public int getCloudVideoViewIndex(String userId) {
         for (int i = 0; i < mVideoViewList.size(); i++) {
-            if (mVideoViewList.get(i).getUserId().contains(userId) && !userId.isEmpty()) {
+            if (userId.equalsIgnoreCase("-1")) {
+                return -1;
+            } else if (null != mVideoViewList.get(i).getUserId() && mVideoViewList.get(i).getUserId().contains(userId) && !userId.isEmpty()) {
                 return i;
             }
         }
