@@ -1345,7 +1345,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     result = jo.getIntValue("result");
 
                     mDeviceStatusBean.getData().setCamera(result);
-                    mDeviceStatusBean.getData().setMic(result);
+                    //mDeviceStatusBean.getData().setMic(result);
                     deviceStatus = JSON.toJSONString(mDeviceStatusBean);
                     webSocket.send(deviceStatus);
 
@@ -1353,8 +1353,11 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         @Override
                         public void run() {
                             onEnableVideo(result == 1);
-                            onEnableSpeak(result == 1);
-                            onEnableAudio(result == 1);
+
+                            /*onEnableSpeak(result == 1);
+                            onEnableAudio(result == 1);*/
+
+
                             onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
                         }
                     });
@@ -1394,7 +1397,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     break;
 
                 case MULTI_SCREEN://多画面
-                    String users = jo.getString("acctno");
+                    String users = jo.getString("layout");
                     final String[] userIds = users.split(",");
                     runOnUiThread(new Runnable() {
                         @Override
@@ -1445,7 +1448,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 onEnableAudio(result == 1);
                 //onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
 
-                onEnableSpeak(result == 1);
+                //onEnableSpeak(result == 1);
             }
         });
 
