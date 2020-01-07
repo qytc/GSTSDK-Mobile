@@ -444,7 +444,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         role = TRTCCloudDef.TRTCRoleAudience;
                         onChangeRole(role);
                         onEnableSpeak(false);
-                        //closeVideoLayout(false);
+                        closeVideoLayout(false);
+                        //showMsg("取消发言请求成功");
                     }
                 });
             }
@@ -531,7 +532,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         ivSpeak.setImageResource(enableSpeak ? R.mipmap.speak_enable : R.mipmap.speak_disable);
         this.bEanbleSpeak = enableSpeak;
         onEnableAudio(enableSpeak);
-        closeVideoLayout(enableSpeak);
+        //closeVideoLayout(enableSpeak);
     }
 
     /**
@@ -1360,8 +1361,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                                 role = TRTCCloudDef.TRTCRoleAnchor;
                                 onChangeRole(role);
                                 onEnableSpeak(true);
-                                //closeVideoLayout(true);
-
+                                closeVideoLayout(true);
+                                isAllMute = false;
 
                             }
                         });
@@ -1393,7 +1394,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     result = jo.getIntValue("result");
 
                     mDeviceStatusBean.getData().setCamera(result);
-                    //mDeviceStatusBean.getData().setMic(result);
+                    mDeviceStatusBean.getData().setMic(result);
                     deviceStatus = JSON.toJSONString(mDeviceStatusBean);
                     webSocket.send(deviceStatus);
 
@@ -1401,12 +1402,10 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         @Override
                         public void run() {
                             onEnableVideo(result == 1);
-
-                            /*onEnableSpeak(result == 1);
-                            onEnableAudio(result == 1);*/
-
-
-                            onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
+                            onEnableSpeak(result == 1);
+                            onEnableAudio(result == 1);
+                            onChangeRole(result == 1 ? TRTCCloudDef.TRTCRoleAnchor : TRTCCloudDef.TRTCRoleAudience);
+                            role = result == 1 ? TRTCCloudDef.TRTCRoleAnchor : TRTCCloudDef.TRTCRoleAudience;
                         }
                     });
                     showMsg("主席已" + (result == 1 ? "打开" : "关闭") + "您的摄像头");
@@ -1496,7 +1495,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 onEnableAudio(result == 1);
                 //onChangeRole(result==1?TRTCCloudDef.TRTCRoleAnchor:TRTCCloudDef.TRTCRoleAudience);
 
-                //onEnableSpeak(result == 1);
+                // onEnableSpeak(result == 1);
             }
         });
 
