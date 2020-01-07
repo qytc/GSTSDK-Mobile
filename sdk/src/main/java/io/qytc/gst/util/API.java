@@ -12,4 +12,6 @@ public class API {
     public static final String CANCEL_SPEAK="/api/live/cancelSpeak";
     public static final String REQUEST_SPEAK="/api/live/requestSpeak";
     public static final String generateUserSig="/api/v1/generateUserSig";
+
+    public static final String getMeetingInfo="/api/meeting/meetingInfo";
 }

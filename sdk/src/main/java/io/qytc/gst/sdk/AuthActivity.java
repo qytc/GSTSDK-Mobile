@@ -46,7 +46,42 @@ public class AuthActivity extends Activity {
         roomId = intent.getIntExtra("roomId", 0);
 
         joinRoomAuth();
+    }
 
+    private void getmeetingInfo() {
+
+        ProgressDialog.Builder builder = new ProgressDialog.Builder(this);
+        builder.setCancelable(false);
+        builder.setMessage("请稍等...");
+        alertDialog = builder.create();
+        alertDialog.show();
+
+        JSONObject jo = new JSONObject();
+        jo.put("roomNo", roomId);
+
+        HttpUtil.getInstance(API.getMeetingInfo).post(jo.toString(), new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                closeDialog();
+                showMsg("获取会议信息失败：" + e.getMessage());
+                finish();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                closeDialog();
+                if (response.code() == 200) {
+                    String jsonStr = response.body().string();
+                    JSONObject jo = JSON.parseObject(jsonStr);
+                    if (jo.get("code").equals("0")) {//验证通过
+                        joinRoomAuth();
+                    }
+                } else {
+                    showMsg("服务器出现异常了");
+                    finish();
+                }
+            }
+        });
     }
 
     private void joinRoomAuth() {
@@ -67,6 +102,7 @@ public class AuthActivity extends Activity {
                 closeDialog();
                 showMsg("加入房间失败，错误内容：" + e.getMessage());
                 finish();
+
             }
 
             @Override

@@ -18,7 +18,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.tencent.rtmp.TXLog;
-import com.tencent.rtmp.ui.TXCloudVideoView;
 import com.tencent.trtc.TRTCCloudDef;
 
 import java.lang.ref.WeakReference;
@@ -42,7 +41,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     public static final int MAX_USER = 25;
     private Context mContext;
 
-    public ArrayList<TXCloudVideoView> getVideoViewList() {
+    public ArrayList<QyVideoView> getVideoViewList() {
         return mVideoViewList;
     }
 
@@ -54,7 +53,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         this.mGrid4ParamList = mGrid4ParamList;
     }
 
-    private ArrayList<TXCloudVideoView> mVideoViewList;
+    private ArrayList<QyVideoView> mVideoViewList;
     private ArrayList<RelativeLayout.LayoutParams> mFloatParamList;
     private ArrayList<LayoutParams> mGrid4ParamList;
     private RelativeLayout mLayout;
@@ -120,7 +119,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     private void showView() {
         mLayout.removeAllViews();
         for (int i = 0; i < mGrid4ParamList.size(); i++) {
-            TXCloudVideoView cloudVideoView = mVideoViewList.get(i);
+            QyVideoView cloudVideoView = mVideoViewList.get(i);
             RelativeLayout.LayoutParams layoutParams = mGrid4ParamList.get(i);
             cloudVideoView.setLayoutParams(layoutParams);
             mLayout.addView(cloudVideoView);
@@ -140,8 +139,8 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         initGrid4Param(statusH, screenW, screenH, bottomMargin, margin);
     }
 
-    public TXCloudVideoView getFreeCloudVideoView() {
-        for (TXCloudVideoView videoView : mVideoViewList) {
+    public QyVideoView getFreeCloudVideoView() {
+        for (QyVideoView videoView : mVideoViewList) {
             String tempUserID = videoView.getUserId();
             if (TextUtils.isEmpty(tempUserID)) {
                 return videoView;
@@ -211,7 +210,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     public void initTXCloudVideoView() {
         mVideoViewList = new ArrayList<>();
         for (int i = 0; i < MAX_USER; i++) {
-            TXCloudVideoView cloudVideoView = new TXCloudVideoView(mContext);
+            QyVideoView cloudVideoView = new QyVideoView(mContext);
             cloudVideoView.setVisibility(GONE);
             cloudVideoView.setId(1000 + i);
             cloudVideoView.setClickable(true);
@@ -222,12 +221,12 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         }
     }
 
-    public TXCloudVideoView getCloudVideoViewByIndex(int index) {
+    public QyVideoView getCloudVideoViewByIndex(int index) {
         return mVideoViewList.get(index);
     }
 
-    public TXCloudVideoView getCloudVideoViewByUseId(String userId) {
-        for (TXCloudVideoView videoView : mVideoViewList) {
+    public QyVideoView getCloudVideoViewByUseId(String userId) {
+        for (QyVideoView videoView : mVideoViewList) {
             String tempUserID = videoView.getUserId();
             if (tempUserID != null && tempUserID.contains(userId)) {
                 return videoView;
@@ -249,7 +248,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
 
     public void updateLayoutGrid() {
         for (int i = 0; i < mVideoViewList.size(); i++) {
-            TXCloudVideoView cloudVideoView = mVideoViewList.get(i);
+            QyVideoView cloudVideoView = mVideoViewList.get(i);
             if (i < mGrid4ParamList.size()) {
                 RelativeLayout.LayoutParams layoutParams = mGrid4ParamList.get(i);
                 cloudVideoView.setLayoutParams(layoutParams);
@@ -262,7 +261,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
                     Object object = v.getTag(R.string.str_tag_pos);
                     if (object != null) {
                         int pos = (int) object;
-                        TXCloudVideoView renderView = (TXCloudVideoView) v;
+                        QyVideoView renderView = (QyVideoView) v;
                         TXLog.i(TAG, "click on pos: " + pos + "/userId: " + renderView.getUserId());
                         if (null != renderView.getUserId()) {
                             swapViewByIndex(0, pos);
@@ -278,60 +277,39 @@ public class TRTCVideoViewLayout extends RelativeLayout {
 
     public void swapViewByIndex(int src, int dst) {
         TXLog.i(TAG, "swapViewByIndex src:" + src + ",dst:" + dst);
-        TXCloudVideoView srcView = mVideoViewList.get(src);
-        TXCloudVideoView dstView = mVideoViewList.get(dst);
+        QyVideoView srcView = mVideoViewList.get(src);
+        QyVideoView dstView = mVideoViewList.get(dst);
         mVideoViewList.set(src, dstView);
         mVideoViewList.set(dst, srcView);
 
         updateLayoutGrid();
     }
 
-    public void appendEventMessage(String userId, String message) {
-        for (int i = 0; i < mVideoViewList.size(); i++) {
-            if (userId.equalsIgnoreCase(mVideoViewList.get(i).getUserId())) {
-                mVideoViewList.get(i).appendEventInfo(message);
-                break;
-            }
-        }
-    }
 
     public int dip2px(float dpValue) {
         final float scale = getResources().getDisplayMetrics().density;
         return (int) (dpValue * scale + 0.5f);
     }
 
-    public void showDebugView(int type) {
-        for (int i = 0; i < mVideoViewList.size(); i++) {
-            TXCloudVideoView renderView = mVideoViewList.get(i);
-            if (renderView != null) {
-                String vUserId = renderView.getUserId();
-                if (!TextUtils.isEmpty(vUserId)) {
-                    renderView.showVideoDebugLog(type);
-                }
-
-            }
-        }
-    }
-
     /**
      * 更新进入房间人数，4个人以下用四宫格，4个人以上用9宫格
      */
-    public TXCloudVideoView onMemberEnter(String userId) {
+    public QyVideoView onMemberEnter(String userId,String userName) {
         Log.e(TAG, "onMemberEnter: userId = " + userId);
 
         if (TextUtils.isEmpty(userId)) return null;
-        TXCloudVideoView videoView = null;
+        QyVideoView videoView = null;
         int posIdx = 0;
         int posLocal = mVideoViewList.size();
         for (int i = 0; i < mVideoViewList.size(); i++) {
-            TXCloudVideoView renderView = mVideoViewList.get(i);
+            QyVideoView renderView = mVideoViewList.get(i);
             if (renderView != null) {
                 String vUserId = renderView.getUserId();
                 if (userId.equalsIgnoreCase(vUserId)) {
                     return renderView;
                 }
                 if (videoView == null && TextUtils.isEmpty(vUserId)) {
-                    renderView.setUserId(userId);
+                    renderView.setUserId(userId,userName);
                     videoView = renderView;
                     posIdx = i;
                     mCount++;
@@ -356,10 +334,10 @@ public class TRTCVideoViewLayout extends RelativeLayout {
 
         int posIdx = 0, posLocal = mVideoViewList.size() - 1;
         for (int i = 0; i < mVideoViewList.size(); i++) {
-            TXCloudVideoView renderView = mVideoViewList.get(i);
+            QyVideoView renderView = mVideoViewList.get(i);
             if (renderView != null && null != renderView.getUserId()) {
                 if (renderView.getUserId().equals(userId)) {
-                    renderView.setUserId(null);
+                    renderView.setUserId("","");
                     renderView.setVisibility(View.GONE);
                     freshToolbarLayoutOnMemberLeave(renderView);
                     posIdx = i;
@@ -405,7 +383,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         return statusBarHeight1;
     }
 
-    private void addToolbarLayout(final TXCloudVideoView videoView) {
+    private void addToolbarLayout(final QyVideoView videoView) {
         View view = videoView.findViewById(R.id.layout_toolbar);
         if (view == null) {
             view = LayoutInflater.from(mContext).inflate(R.layout.layout_toolbar, videoView);
@@ -479,7 +457,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         }
     }
 
-    private void clearVideoViewExtraData(TXCloudVideoView videoView) {
+    private void clearVideoViewExtraData(QyVideoView videoView) {
         Button btnRemoteVideo = (Button) videoView.findViewById(R.id.btn_remote_video);
         btnRemoteVideo.setTag(R.mipmap.remote_video_enable);
         btnRemoteVideo.setBackgroundResource(R.mipmap.remote_video_enable);
@@ -494,7 +472,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     }
 
     public void freshToolbarLayout() {
-        for (TXCloudVideoView videoView : mVideoViewList) {
+        for (QyVideoView videoView : mVideoViewList) {
             String userId = videoView.getUserId();
 
             View layoutToolbar = videoView.findViewById(R.id.layout_toolbar);
@@ -536,7 +514,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     }
 
     public void freshToolbarLayoutOnMemberEnter(String userID) {
-        for (TXCloudVideoView videoView : mVideoViewList) {
+        for (QyVideoView videoView : mVideoViewList) {
             String tempUserID = videoView.getUserId();
             if (tempUserID != null && tempUserID.equalsIgnoreCase(userID)) {
                 View layoutToolbar = videoView.findViewById(R.id.layout_toolbar);
@@ -549,14 +527,14 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         }
     }
 
-    private void freshToolbarLayoutOnMemberLeave(TXCloudVideoView videoView) {
+    private void freshToolbarLayoutOnMemberLeave(QyVideoView videoView) {
         showAudioVolumeProgressBar(videoView, false);
 //        showToolbarButtons(videoView, false);
         showNoVideoLayout(videoView, false);
         clearVideoViewExtraData(videoView);
     }
 
-    private void showToolbarButtons(TXCloudVideoView videoView, boolean bShow) {
+    private void showToolbarButtons(QyVideoView videoView, boolean bShow) {
         View view = videoView.findViewById(R.id.toolbar_buttons);
         if (view != null) {
             view.setVisibility(bShow ? VISIBLE : GONE);
@@ -564,18 +542,18 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     }
 
     public void hideAllAudioVolumeProgressBar() {
-        for (TXCloudVideoView videoView : mVideoViewList) {
+        for (QyVideoView videoView : mVideoViewList) {
             showAudioVolumeProgressBar(videoView, false);
         }
     }
 
     public void showAllAudioVolumeProgressBar() {
-        for (TXCloudVideoView videoView : mVideoViewList) {
+        for (QyVideoView videoView : mVideoViewList) {
             showAudioVolumeProgressBar(videoView, true);
         }
     }
 
-    private void showAudioVolumeProgressBar(TXCloudVideoView videoView, boolean bShow) {
+    private void showAudioVolumeProgressBar(QyVideoView videoView, boolean bShow) {
         View layoutToolbar = videoView.findViewById(R.id.layout_toolbar);
         if (layoutToolbar != null) {
             if (bShow == true) layoutToolbar.bringToFront();
@@ -587,7 +565,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         }
     }
 
-    private void showNoVideoLayout(TXCloudVideoView videoView, boolean bShow) {
+    private void showNoVideoLayout(QyVideoView videoView, boolean bShow) {
         View view = videoView.findViewById(R.id.layout_no_video);
         if (view != null) {
             view.setVisibility(bShow ? VISIBLE : GONE);
@@ -596,14 +574,14 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     }
 
     public void resetAudioVolume() {
-        for (TXCloudVideoView videoView : mVideoViewList) {
+        for (QyVideoView videoView : mVideoViewList) {
             ProgressBar progressBar = (ProgressBar) videoView.findViewById(R.id.audio_volume);
             progressBar.setProgress(0);
         }
     }
 
     public void updateAudioVolume(String userID, int audioVolume) {
-        for (TXCloudVideoView videoView : mVideoViewList) {
+        for (QyVideoView videoView : mVideoViewList) {
             if (videoView.getVisibility() == VISIBLE) {
                 ProgressBar progressBar = (ProgressBar) videoView.findViewById(R.id.audio_volume);
                 String tempUserID = videoView.getUserId();
@@ -615,7 +593,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     }
 
     public void updateNetworkQuality(String userID, int quality) {
-        for (TXCloudVideoView videoView : mVideoViewList) {
+        for (QyVideoView videoView : mVideoViewList) {
             if (videoView.getVisibility() == VISIBLE) {
                 String tempUserID = videoView.getUserId();
                 if (tempUserID != null && tempUserID.startsWith(userID)) {
@@ -646,7 +624,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     }
 
     public void updateVideoStatus(String userID, boolean bHasVideo) {
-        for (TXCloudVideoView videoView : mVideoViewList) {
+        for (QyVideoView videoView : mVideoViewList) {
             if (videoView.getVisibility() == VISIBLE) {
                 String tempUserID = videoView.getUserId();
                 if (tempUserID != null && tempUserID.startsWith(userID)) {
