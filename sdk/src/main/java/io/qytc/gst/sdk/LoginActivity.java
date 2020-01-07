@@ -25,11 +25,11 @@ import okhttp3.Response;
 
 
 public class LoginActivity extends Activity {
-    private Integer     mSdkAppId;
+    private Integer mSdkAppId;
     private AlertDialog alertDialog;
-    private int         roomId;
-    private String      userId;
-    private int         role;
+    private int roomId;
+    private String userId;
+    private int role;
     private Intent intent;
 
     @Override
@@ -100,7 +100,7 @@ public class LoginActivity extends Activity {
                     JSONObject object = JSON.parseObject(response.body().string());
                     if (object.get("code").equals("0")) {
                         String userSig = object.getString("data");
-                        intent.setClass(getContext(),AuthActivity.class);
+                        intent.setClass(getContext(), AuthActivity.class);
                         intent.putExtra("userSig", userSig);
                         startActivity(intent);
                     } else {

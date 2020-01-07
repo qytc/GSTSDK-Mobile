@@ -35,7 +35,7 @@ public class AuthActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mContext=this;
+        mContext = this;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -59,10 +59,11 @@ public class AuthActivity extends Activity {
         JSONObject jo = new JSONObject();
         jo.put("roomNo", roomId);
         jo.put("acctno", selfUserId);
+        jo.put("device", "Android");
 
         HttpUtil.getInstance(API.JOIN_ROOM).post(jo.toString(), new Callback() {
             @Override
-            public void onFailure(Call call,IOException e) {
+            public void onFailure(Call call, IOException e) {
                 closeDialog();
                 showMsg("加入房间失败，错误内容：" + e.getMessage());
                 finish();
@@ -71,13 +72,12 @@ public class AuthActivity extends Activity {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 closeDialog();
-                if(response.code()==200){
+                if (response.code() == 200) {
                     String jsonStr = response.body().string();
                     JSONObject jo = JSON.parseObject(jsonStr);
                     if (jo.get("code").equals("0")) {//验证通过
                         checkSuccessEnterRoom();
-                    }
-                    else if (jo.get("code").equals("2")) {//请输入密码
+                    } else if (jo.get("code").equals("2")) {//请输入密码
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -85,8 +85,7 @@ public class AuthActivity extends Activity {
                             }
                         });
                         showMsg(jo.getString("msg"));
-                    }
-                    else if (jo.get("code").equals("3")) {//密码错误
+                    } else if (jo.get("code").equals("3")) {//密码错误
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -94,12 +93,14 @@ public class AuthActivity extends Activity {
                             }
                         });
                         showMsg(jo.getString("msg"));
-                    }
-                    else {//其他
+                    } else if (jo.get("code").equals("-2")) {
+                        showMsg(jo.getString("msg"));
+                        finish();
+                    } else {//其他
                         showMsg(jo.getString("msg"));
                         finish();
                     }
-                }else {
+                } else {
                     showMsg("服务器出现异常了");
                     finish();
                 }
@@ -110,7 +111,7 @@ public class AuthActivity extends Activity {
     private void inputPassword() {
 
         findViewById(R.id.password_layout).setVisibility(View.VISIBLE);
-        final TextView password_et =findViewById(R.id.password_et);
+        final TextView password_et = findViewById(R.id.password_et);
 
         Button confirm_btn = findViewById(R.id.confirm_btn);
         Button cancel_btn = findViewById(R.id.cancel_btn);
@@ -153,9 +154,9 @@ public class AuthActivity extends Activity {
             }
 
             @Override
-            public void onResponse(Call call,Response response) throws IOException {
+            public void onResponse(Call call, Response response) throws IOException {
                 closeDialog();
-                if(response.code()==200){
+                if (response.code() == 200) {
                     String string = response.body().string();
                     JSONObject jo = JSON.parseObject(string);
                     if (jo.get("code").equals("0")) {
@@ -170,7 +171,7 @@ public class AuthActivity extends Activity {
                             }
                         });
                     }
-                }else {
+                } else {
                     showMsg("服务器出现异常了");
                     finish();
                 }
@@ -179,8 +180,8 @@ public class AuthActivity extends Activity {
     }
 
     private void checkSuccessEnterRoom() {
-        Intent intent=getIntent();
-        intent.setClass(this,RoomActivity.class);
+        Intent intent = getIntent();
+        intent.setClass(this, RoomActivity.class);
         startActivity(intent);
         finish();
     }

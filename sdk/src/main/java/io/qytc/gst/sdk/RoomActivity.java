@@ -511,6 +511,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         mDeviceStatusBean.getData().setMic(bEnableAudio ? 1 : 0);
         deviceStatus = JSON.toJSONString(mDeviceStatusBean);
         webSocket.send(deviceStatus);
+
     }
 
     /**
@@ -518,6 +519,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
      */
     private void onEnableAudio(boolean enableAudio) {
         trtcCloud.muteLocalAudio(!enableAudio);
+
         ivVoice.setImageResource(enableAudio ? R.mipmap.mic_enable : R.mipmap.mic_disable);
         this.bEnableAudio = enableAudio;
     }
