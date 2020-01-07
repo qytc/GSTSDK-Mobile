@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -21,9 +20,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.tencent.liteav.TXLiteAVCode;
-import com.tencent.rtmp.ui.TXCloudVideoView;
 import com.tencent.trtc.TRTCCloud;
 import com.tencent.trtc.TRTCCloudDef;
 import com.tencent.trtc.TRTCCloudListener;
@@ -34,12 +33,15 @@ import java.lang.ref.WeakReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.qytc.gst.bean.DeviceStatusBean;
 import io.qytc.gst.dialog.MoreDialog;
 import io.qytc.gst.dialog.SettingDialog;
 import io.qytc.gst.util.API;
 import io.qytc.gst.util.HttpUtil;
+import io.qytc.gst.view.QyVideoView;
 import io.qytc.gst.view.TRTCVideoViewLayout;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -88,6 +90,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     private OkHttpClient mOkHttpClient;
     private WebSocket webSocket;
     private boolean isAllMute = false;
+    private ArrayList<HashMap<String, String>> memberHashMapList = new ArrayList<>();
 
     private DeviceStatusBean mDeviceStatusBean = new DeviceStatusBean();
 
@@ -233,7 +236,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         initClickableLayout(R.id.ll_more);
 
         mVideoViewLayout = findViewById(R.id.ll_mainview);
-        mVideoViewLayout.setUserId(trtcParams.userId);
+        mVideoViewLayout.setUserId(findUserNameByUserid(trtcParams.userId));
         mVideoViewLayout.setListener(this);
 
         ivSpeak = findViewById(R.id.iv_speak);
@@ -715,7 +718,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             RoomActivity activity = mContext.get();
             if (activity != null) {
                 // 创建一个View用来显示新的一路画面
-                TXCloudVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                QyVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG,activity.findUserNameByUserid(userId));
                 if (renderView != null) {
                     // 设置仪表盘数据显示
                     renderView.setVisibility(View.VISIBLE);
@@ -749,21 +752,21 @@ public class RoomActivity extends Activity implements View.OnClickListener,
          */
         @Override
         public void onUserVideoAvailable(final String userId, boolean available) {
-            RoomActivity activity = mContext.get();
+            final RoomActivity activity = mContext.get();
             if (activity != null) {
                 VideoStream userStream = new VideoStream();
                 userStream.userId = userId;
                 userStream.streamType = TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG;
                 if (available) {
-                    final TXCloudVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                    final QyVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG,activity.findUserNameByUserid(userId));
                     if (renderView != null) {
                         // 启动远程画面的解码和显示逻辑，FillMode 可以设置是否显示黑边
                         activity.trtcCloud.setRemoteViewFillMode(userId, TRTCCloudDef.TRTC_VIDEO_RENDER_MODE_FIT);
-                        activity.trtcCloud.startRemoteView(userId, renderView);
+                        activity.trtcCloud.startRemoteView(userId, renderView.getVideoView());
                         activity.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                renderView.setUserId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                                renderView.setUserId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, activity.findUserNameByUserid(userId));
                             }
                         });
                     }
@@ -781,7 +784,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         }
 
         public void onUserSubStreamAvailable(final String userId, boolean available) {
-            RoomActivity activity = mContext.get();
+            final RoomActivity activity = mContext.get();
             if (activity != null) {
                 VideoStream userStream = new VideoStream();
                 userStream.userId = userId;
@@ -793,16 +796,16 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         activity.mVideoViewLayout.onMemberLeave(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
                         activity.mVideosInRoom.remove(userStream);
                     }
-                    final TXCloudVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB);
+                    final QyVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB,activity.findUserNameByUserid(userId));
                     if (renderView != null) {
                         // 启动远程画面的解码和显示逻辑，FillMode 可以设置是否显示黑边
                         activity.trtcCloud.setRemoteSubStreamViewFillMode(userId, TRTCCloudDef.TRTC_VIDEO_RENDER_MODE_FIT);
-                        activity.trtcCloud.startRemoteSubStreamView(userId, renderView);
+                        activity.trtcCloud.startRemoteSubStreamView(userId, renderView.getVideoView());
 
                         activity.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                renderView.setUserId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB);
+                                renderView.setUserId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_SUB, activity.findUserNameByUserid(userId));
                             }
                         });
                     }
@@ -824,7 +827,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             RoomActivity activity = mContext.get();
             if (activity != null) {
                 if (available) {
-                    final TXCloudVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                    final QyVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG,activity.findUserNameByUserid(userId));
                     if (renderView != null) {
                         renderView.setVisibility(View.VISIBLE);
                     }
@@ -896,14 +899,14 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     @Override
     public void onEnableRemoteVideo(final String userId, boolean enable) {
         if (enable) {
-            final TXCloudVideoView renderView = mVideoViewLayout.getCloudVideoViewByUseId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+            final QyVideoView renderView = mVideoViewLayout.getCloudVideoViewByUseId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
             if (renderView != null) {
                 trtcCloud.setRemoteViewFillMode(userId, TRTCCloudDef.TRTC_VIDEO_RENDER_MODE_FIT);
-                trtcCloud.startRemoteView(userId, renderView);
+                trtcCloud.startRemoteView(userId, renderView.getVideoView());
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        renderView.setUserId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                        renderView.setUserId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, findUserNameByUserid(userId));
                         mVideoViewLayout.freshToolbarLayoutOnMemberEnter(userId);
                     }
                 });
@@ -1011,7 +1014,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         } else {
             startLocalVideo(false);
             trtcCloud.stopLocalAudio();
-            TXCloudVideoView localVideoView = mVideoViewLayout.getCloudVideoViewByUseId(trtcParams.userId);
+            QyVideoView localVideoView = mVideoViewLayout.getCloudVideoViewByUseId(trtcParams.userId);
             if (localVideoView != null) {
                 localVideoView.setVisibility(View.GONE);
             }
@@ -1242,17 +1245,17 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     }
 
     private void startLocalVideo(boolean enable) {
-        TXCloudVideoView localVideoView = mVideoViewLayout.getCloudVideoViewByUseId(trtcParams.userId);
+        QyVideoView localVideoView = mVideoViewLayout.getCloudVideoViewByUseId(trtcParams.userId);
         if (localVideoView == null) {
             localVideoView = mVideoViewLayout.getFreeCloudVideoView();
         }
-        localVideoView.setUserId(trtcParams.userId);
+        localVideoView.setUserId(trtcParams.userId, findUserNameByUserid(trtcParams.userId));
         localVideoView.setVisibility(View.VISIBLE);
         if (enable) {
             // 设置 TRTC SDK 的状态
             trtcCloud.enableCustomVideoCapture(false);
             //启动SDK摄像头采集和渲染
-            trtcCloud.startLocalPreview(moreDlg.isCameraFront(), localVideoView);
+            trtcCloud.startLocalPreview(moreDlg.isCameraFront(), localVideoView.getVideoView());
         } else {
             trtcCloud.stopLocalPreview();
         }
@@ -1272,7 +1275,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             }
         }
 
-        for (TXCloudVideoView qyVideoView : mVideoViewLayout.getVideoViewList()) {
+        for (QyVideoView qyVideoView : mVideoViewLayout.getVideoViewList()) {
             qyVideoView.setVisibility(View.GONE);
         }
 
@@ -1280,7 +1283,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         for (int j = 0; j < userLocation.size(); j++) {
             if (!TextUtils.isEmpty(userLocation.get(j)) && (!userLocation.get(j).equalsIgnoreCase("-1"))) {
                 for (int i = 0; i < mVideoViewLayout.getVideoViewList().size(); i++) {
-                    TXCloudVideoView qyVideoView = mVideoViewLayout.getVideoViewList().get(i);
+                    QyVideoView qyVideoView = mVideoViewLayout.getVideoViewList().get(i);
                     String userId = qyVideoView.getUserId();
                     if (!TextUtils.isEmpty(userId)) {
                         if (userId.contains(userLocation.get(j))) {
@@ -1289,30 +1292,28 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                             break;
                         }
 
-                        if (i == mVideoViewLayout.getVideoViewList().size()-1){
+                        if (i == mVideoViewLayout.getVideoViewList().size() - 1) {
                             for (int k = 0; k < mVideoViewLayout.getVideoViewList().size(); k++) {
-                                TXCloudVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(k);
+                                QyVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(k);
                                 String userIdj = cloudVideoView.getUserId();
                                 if (TextUtils.isEmpty(userIdj)) {
-                                    cloudVideoView.setUserId(userLocation.get(j));
+                                    cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, findUserNameByUserid(userLocation.get(j)));
                                     cloudVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
-                                    trtcCloud.startRemoteView(userLocation.get(j),cloudVideoView);
-                                    cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                                    trtcCloud.startRemoteView(userLocation.get(j), cloudVideoView.getVideoView());
                                     break;
                                 }
                             }
                         }
 
                     }
-                    if (i == mVideoViewLayout.getVideoViewList().size()-1){
+                    if (i == mVideoViewLayout.getVideoViewList().size() - 1) {
                         for (int k = 0; k < mVideoViewLayout.getVideoViewList().size(); k++) {
-                            TXCloudVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(k);
+                            QyVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(k);
                             String userIdj = cloudVideoView.getUserId();
                             if (TextUtils.isEmpty(userIdj)) {
-                                cloudVideoView.setUserId(userLocation.get(j));
+                                cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG,findUserNameByUserid(userLocation.get(j)));
                                 cloudVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
-                                trtcCloud.startRemoteView(userLocation.get(j),cloudVideoView);
-                                cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                                trtcCloud.startRemoteView(userLocation.get(j), cloudVideoView.getVideoView());
                                 break;
                             }
                         }
@@ -1320,10 +1321,10 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 }
             } else {
                 for (int i = 0; i < mVideoViewLayout.getVideoViewList().size(); i++) {
-                    TXCloudVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(i);
+                    QyVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(i);
                     String userId = cloudVideoView.getUserId();
                     if (TextUtils.isEmpty(userId)) {
-                        cloudVideoView.setUserId("");
+                        cloudVideoView.setUserId("", "");
                         cloudVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
                         break;
                     }
@@ -1353,7 +1354,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             mOkHttpClient = builder.build();
         }
 
-        Request request = new Request.Builder().url(API.WS_HOST).build();
+        Request request = new Request.Builder().url(API.WS_HOST + "?acctno=" + selfUserId + "&roomNo=" + roomId).build();
         webSocketListener = new EchoWebSocketListener();
         webSocket = mOkHttpClient.newWebSocket(request, webSocketListener);
         mOkHttpClient.dispatcher().executorService().shutdown();
@@ -1362,6 +1363,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     class EchoWebSocketListener extends WebSocketListener {
 
         public boolean webSocketConnect;
+        //进房间
+        public static final String JOIN_ROOM = "join_room";
         //确认允许发言
         public static final String CONFIRM_SPEAK = "confirm_speak";
         //控制麦克风
@@ -1405,6 +1408,16 @@ public class RoomActivity extends Activity implements View.OnClickListener,
 
             final int result;
             switch (jo.getString("cmd")) {
+                case JOIN_ROOM:
+                    String memberList = jo.getString("memberList");
+                    JSONArray mListJson = JSON.parseArray(memberList);
+                    for (int i = 0; i < mListJson.size(); i++) {
+                        JSONObject jsonObject = mListJson.getJSONObject(i);
+                        HashMap<String, String> map = new HashMap<>();
+                        map.put(jsonObject.getString("acctno"), jsonObject.getString("name"));
+                        memberHashMapList.add(map);
+                    }
+                    break;
                 case CONFIRM_SPEAK://主席端 同意/拒绝 分会场发言申请
                     result = jo.getIntValue("result");
 
@@ -1561,6 +1574,20 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         } else {
             showMsg("主席已" + (result == 1 ? "打开" : "关闭") + "您的麦克风");
         }
+
+    }
+
+    public String findUserNameByUserid(String userId) {
+        if (TextUtils.isEmpty(userId)) {
+            return userId;
+        }
+        for (int i = 0; i < memberHashMapList.size(); i++) {
+            HashMap<String, String> hashMap = memberHashMapList.get(i);
+            if (hashMap.containsKey(userId)) {
+                return hashMap.get(userId);
+            }
+        }
+        return userId;
 
     }
 }
