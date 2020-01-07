@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -766,7 +767,6 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                             }
                         });
                     }
-
                     activity.mVideosInRoom.add(userStream);
                 } else {
                     activity.trtcCloud.stopRemoteView(userId);
@@ -1259,19 +1259,75 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     }
 
     private void swapViewByIndex(String[] userIds) {
-        if (null==userIds||userIds.length == 0){
+        if (null == userIds || userIds.length == 0) {
             return;
         }
         ArrayList<String> userLocation = new ArrayList<>();
-        for (int i = 0; i < userIds.length; i++){
-            if (!userIds[i].equalsIgnoreCase("-1")&&userLocation.size()<4){
+        for (int i = 0; i < userIds.length; i++) {
+            if (i < 4) {
                 userLocation.add(userIds[i]);
             }
+            if (i == 4) {
+                break;
+            }
         }
-        for (int i = 0; i < userLocation.size(); i++) {
-            int src = mVideoViewLayout.getCloudVideoViewIndex(userLocation.get(i));
-            if (src >= 0) {
-                mVideoViewLayout.swapViewByIndex(i, src);
+
+        for (TXCloudVideoView qyVideoView : mVideoViewLayout.getVideoViewList()) {
+            qyVideoView.setVisibility(View.GONE);
+        }
+
+        int index = 0;
+        for (int j = 0; j < userLocation.size(); j++) {
+            if (!TextUtils.isEmpty(userLocation.get(j)) && (!userLocation.get(j).equalsIgnoreCase("-1"))) {
+                for (int i = 0; i < mVideoViewLayout.getVideoViewList().size(); i++) {
+                    TXCloudVideoView qyVideoView = mVideoViewLayout.getVideoViewList().get(i);
+                    String userId = qyVideoView.getUserId();
+                    if (!TextUtils.isEmpty(userId)) {
+                        if (userId.contains(userLocation.get(j))) {
+                            qyVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
+                            qyVideoView.setVisibility(View.VISIBLE);
+                            break;
+                        }
+
+                        if (i == mVideoViewLayout.getVideoViewList().size()-1){
+                            for (int k = 0; k < mVideoViewLayout.getVideoViewList().size(); k++) {
+                                TXCloudVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(k);
+                                String userIdj = cloudVideoView.getUserId();
+                                if (TextUtils.isEmpty(userIdj)) {
+                                    cloudVideoView.setUserId(userLocation.get(j));
+                                    cloudVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
+                                    trtcCloud.startRemoteView(userLocation.get(j),cloudVideoView);
+                                    cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                                    break;
+                                }
+                            }
+                        }
+
+                    }
+                    if (i == mVideoViewLayout.getVideoViewList().size()-1){
+                        for (int k = 0; k < mVideoViewLayout.getVideoViewList().size(); k++) {
+                            TXCloudVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(k);
+                            String userIdj = cloudVideoView.getUserId();
+                            if (TextUtils.isEmpty(userIdj)) {
+                                cloudVideoView.setUserId(userLocation.get(j));
+                                cloudVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
+                                trtcCloud.startRemoteView(userLocation.get(j),cloudVideoView);
+                                cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (int i = 0; i < mVideoViewLayout.getVideoViewList().size(); i++) {
+                    TXCloudVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(i);
+                    String userId = cloudVideoView.getUserId();
+                    if (TextUtils.isEmpty(userId)) {
+                        cloudVideoView.setUserId("");
+                        cloudVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
+                        break;
+                    }
+                }
             }
         }
     }
@@ -1482,6 +1538,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             webSocketConnect = false;
             startWebSocket();
         }
+
     }
 
     private void controlMic(final int result, boolean isAllMute) {

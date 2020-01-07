@@ -24,6 +24,7 @@ import com.tencent.trtc.TRTCCloudDef;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import io.qytc.gst.sdk.R;
 
@@ -33,14 +34,24 @@ import io.qytc.gst.sdk.R;
  * Function: 用于计算每个视频画面的位置排布和大小尺寸
  */
 public class TRTCVideoViewLayout extends RelativeLayout {
+    // 默认布局参数布局
+    final static String DEFAULT_USERID = "-1";
     private final static String TAG = TRTCVideoViewLayout.class.getSimpleName();
     public static final int MODE_FLOAT = 1;  // 前后堆叠模式
     public static final int MODE_GRID = 2;  // 九宫格模式
-    public static final int MAX_USER = 4;
+    public static final int MAX_USER = 25;
     private Context mContext;
 
     public ArrayList<TXCloudVideoView> getVideoViewList() {
         return mVideoViewList;
+    }
+
+    public ArrayList<LayoutParams> getmGrid4ParamList() {
+        return mGrid4ParamList;
+    }
+
+    public void setmGrid4ParamList(ArrayList<LayoutParams> mGrid4ParamList) {
+        this.mGrid4ParamList = mGrid4ParamList;
     }
 
     private ArrayList<TXCloudVideoView> mVideoViewList;
@@ -108,7 +119,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
 
     private void showView() {
         mLayout.removeAllViews();
-        for (int i = 0; i < mVideoViewList.size(); i++) {
+        for (int i = 0; i < mGrid4ParamList.size(); i++) {
             TXCloudVideoView cloudVideoView = mVideoViewList.get(i);
             RelativeLayout.LayoutParams layoutParams = mGrid4ParamList.get(i);
             cloudVideoView.setLayoutParams(layoutParams);
@@ -265,7 +276,6 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         }
     }
 
-
     public void swapViewByIndex(int src, int dst) {
         TXLog.i(TAG, "swapViewByIndex src:" + src + ",dst:" + dst);
         TXCloudVideoView srcView = mVideoViewList.get(src);
@@ -344,7 +354,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     public void onMemberLeave(String userId) {
         Log.e(TAG, "onMemberLeave: userId = " + userId);
 
-        int posIdx = 0, posLocal = mVideoViewList.size();
+        int posIdx = 0, posLocal = mVideoViewList.size() - 1;
         for (int i = 0; i < mVideoViewList.size(); i++) {
             TXCloudVideoView renderView = mVideoViewList.get(i);
             if (renderView != null && null != renderView.getUserId()) {
