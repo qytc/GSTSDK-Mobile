@@ -97,6 +97,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     private ArrayList<HashMap<String, String>> memberHashMapList = new ArrayList<>();
 
     private DeviceStatusBean mDeviceStatusBean = new DeviceStatusBean();
+    private String[] userIds;
 
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
@@ -452,13 +453,37 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+
+                        onEnableVideo(false);
+                        onEnableSpeak(false);
+                        onEnableAudio(false);
                         role = TRTCCloudDef.TRTCRoleAudience;
                         onChangeRole(role);
-                        onEnableSpeak(false);
-                        closeVideoLayout(false);
+
+                        //onEnableSpeak(false);
+                        //closeVideoLayout(false);
                         //showMsg("取消发言请求成功");
                     }
                 });
+
+
+                /*mDeviceStatusBean.getData().setCamera(result);
+                mDeviceStatusBean.getData().setMic(result);
+                deviceStatus = JSON.toJSONString(mDeviceStatusBean);
+                webSocket.send(deviceStatus);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        onEnableVideo(result == 1);
+                        onEnableSpeak(result == 1);
+                        onEnableAudio(result == 1);
+                        onChangeRole(result == 1 ? TRTCCloudDef.TRTCRoleAnchor : TRTCCloudDef.TRTCRoleAudience);
+                        role = result == 1 ? TRTCCloudDef.TRTCRoleAnchor : TRTCCloudDef.TRTCRoleAudience;*/
+
+
+
+
             }
         });
     }
@@ -543,7 +568,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         ivSpeak.setImageResource(enableSpeak ? R.mipmap.speak_enable : R.mipmap.speak_disable);
         this.bEanbleSpeak = enableSpeak;
         onEnableAudio(enableSpeak);
-        //closeVideoLayout(enableSpeak);
+        closeVideoLayout(enableSpeak);
     }
 
     /**
@@ -831,11 +856,6 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 return;
             }
             if (available) {
-                if (null != activity.mVideoViewLayout.getCloudVideoViewByUseId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG)) {
-                    //停止观看画面
-                    // activity.trtcCloud.stopRemoteView(userId);
-                    // activity.mVideoViewLayout.onMemberLeave(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
-                }
                 activity.videoViewShare.setVisibility(View.VISIBLE);
                 activity.trtcCloud.startRemoteSubStreamView(userId, activity.videoViewShare);
             } else {
@@ -1457,8 +1477,11 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                                 bEnableVideo = true;
                                 role = TRTCCloudDef.TRTCRoleAnchor;
                                 onChangeRole(role);
-                                onEnableSpeak(true);
-                                closeVideoLayout(true);
+                                onEnableVideo(result == 1);
+                                onEnableSpeak(result == 1);
+                                onEnableAudio(result == 1);
+                               // onEnableSpeak(true);
+                                //closeVideoLayout(true);
                                 isAllMute = false;
 
                             }
@@ -1524,11 +1547,9 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     });
                     break;
                 case CANCEL_SPEAK://主席端取消分会场发言
-
                     mDeviceStatusBean.getData().setSpeaker(0);
                     deviceStatus = JSON.toJSONString(mDeviceStatusBean);
                     webSocket.send(deviceStatus);
-
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -1541,7 +1562,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     break;
                 case MULTI_SCREEN://多画面
                     String users = jo.getString("layout");
-                    final String[] userIds = users.split(",");
+                    userIds = users.split(",");
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -1550,11 +1571,9 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     });
                     break;
                 case WATCH:
-                    //{"broadcast":"on","acctno":"9530","roomNo":"9999","cmd":"watch"}
                     broadcastStatus = jo.getString("broadcast");
                     acctno = jo.getString("acctno");
                     if (broadcastStatus.equalsIgnoreCase("on")) {
-                        //mVideoViewLayout.setCanZoomFullscreen(false);
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -1569,13 +1588,9 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                                         trtcCloud.startRemoteView(acctno, videoViewShare);
                                     }
                                 }
-
-                               /* qyVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(4));
-                                qyVideoView.setVisibility(View.VISIBLE);*/
                             }
                         });
                     } else {
-
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -1591,14 +1606,9 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                                     }
                                 }
 
-                               /* qyVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(4));
-                                qyVideoView.setVisibility(View.VISIBLE);*/
                             }
                         });
-                        /*mVideoViewLayout.setCanZoomFullscreen(true);
-                        acctno = null;*/
                     }
-                    /*mVideoViewLayout.zoom(acctno);*/
                     break;
                 case FORCE_EXIT:
                     String msg = jo.getString("msg");

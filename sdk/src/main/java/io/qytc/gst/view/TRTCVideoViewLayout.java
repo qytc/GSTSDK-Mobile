@@ -180,7 +180,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         mGrid4ParamList.add(layoutParams2);
         mGrid4ParamList.add(layoutParams3);
         // 大画面参数
-        mGrid4ParamList.add(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        //mGrid4ParamList.add(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
     public void initFloatLayoutParams() {
@@ -360,9 +360,9 @@ public class TRTCVideoViewLayout extends RelativeLayout {
             }
         }
 
-        if (0 == posIdx) {
+        /*if (0 == posIdx) {
             swapViewByIndex(posIdx, posLocal);
-        }
+        }*/
 
         updateLayoutGrid();
     }
