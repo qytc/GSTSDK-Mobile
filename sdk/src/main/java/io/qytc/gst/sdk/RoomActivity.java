@@ -507,7 +507,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     onEnableSpeak(false);
                     onEnableAudio(false);
                     role = TRTCCloudDef.TRTCRoleAudience;
-                    mVideoViewLayout.updateVideoStatus(trtcParams.userId, bEnableVideo);
+                    /*mVideoViewLayout.updateVideoStatus(trtcParams.userId, bEnableVideo);*/
                     ivCamera.setImageResource(bEnableVideo ? R.mipmap.remote_video_enable : R.mipmap.remote_video_disable);
                 }
             });
@@ -524,7 +524,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
      */
     private void onEnableVideo(boolean enableVideo) {
         startLocalVideo(enableVideo);
-        mVideoViewLayout.updateVideoStatus(trtcParams.userId, enableVideo);
+        /*mVideoViewLayout.updateVideoStatus(trtcParams.userId, enableVideo);*/
         ivCamera.setImageResource(enableVideo ? R.mipmap.remote_video_enable : R.mipmap.remote_video_disable);
         this.bEnableAudio = enableVideo;
         this.bEnableVideo = enableVideo;
