@@ -23,6 +23,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.tencent.liteav.TXLiteAVCode;
+import com.tencent.rtmp.ui.TXCloudVideoView;
 import com.tencent.trtc.TRTCCloud;
 import com.tencent.trtc.TRTCCloudDef;
 import com.tencent.trtc.TRTCCloudListener;
@@ -87,6 +88,9 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     private String userSig;
     private String deviceStatus;
 
+    private String broadcastStatus;
+    private String acctno;
+
     private OkHttpClient mOkHttpClient;
     private WebSocket webSocket;
     private boolean isAllMute = false;
@@ -113,6 +117,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
     };
     private EchoWebSocketListener webSocketListener;
     private int role;
+    private TXCloudVideoView videoViewShare;
 
     private static class VideoStream {
         String userId;
@@ -238,6 +243,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         mVideoViewLayout = findViewById(R.id.ll_mainview);
         mVideoViewLayout.setUserId(findUserNameByUserid(trtcParams.userId));
         mVideoViewLayout.setListener(this);
+
+        videoViewShare = findViewById(R.id.video_view_share);
 
         ivSpeak = findViewById(R.id.iv_speak);
         ivSpeak.setImageResource(role == TRTCCloudDef.TRTCRoleAnchor ? R.mipmap.speak_enable : R.mipmap.speak_disable);
@@ -718,7 +725,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             RoomActivity activity = mContext.get();
             if (activity != null) {
                 // 创建一个View用来显示新的一路画面
-                QyVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG,activity.findUserNameByUserid(userId));
+                QyVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, activity.findUserNameByUserid(userId));
                 if (renderView != null) {
                     // 设置仪表盘数据显示
                     renderView.setVisibility(View.VISIBLE);
@@ -758,7 +765,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 userStream.userId = userId;
                 userStream.streamType = TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG;
                 if (available) {
-                    final QyVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG,activity.findUserNameByUserid(userId));
+                    final QyVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, activity.findUserNameByUserid(userId));
                     if (renderView != null) {
                         // 启动远程画面的解码和显示逻辑，FillMode 可以设置是否显示黑边
                         activity.trtcCloud.setRemoteViewFillMode(userId, TRTCCloudDef.TRTC_VIDEO_RENDER_MODE_FIT);
@@ -780,10 +787,9 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 activity.updateCloudMixtureParams();
                 activity.mVideoViewLayout.updateVideoStatus(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, available);
             }
-
         }
 
-        public void onUserSubStreamAvailable(final String userId, boolean available) {
+        /*public void onUserSubStreamAvailable(final String userId, boolean available) {
             final RoomActivity activity = mContext.get();
             if (activity != null) {
                 VideoStream userStream = new VideoStream();
@@ -817,7 +823,27 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                 }
                 activity.updateCloudMixtureParams();
             }
+        }*/
+
+        public void onUserSubStreamAvailable(final String userId, boolean available) {
+            final RoomActivity activity = mContext.get();
+            if (activity == null || TextUtils.isEmpty(userId)) {
+                return;
+            }
+            if (available) {
+                if (null != activity.mVideoViewLayout.getCloudVideoViewByUseId(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG)) {
+                    //停止观看画面
+                    // activity.trtcCloud.stopRemoteView(userId);
+                    // activity.mVideoViewLayout.onMemberLeave(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG);
+                }
+                activity.videoViewShare.setVisibility(View.VISIBLE);
+                activity.trtcCloud.startRemoteSubStreamView(userId, activity.videoViewShare);
+            } else {
+                activity.trtcCloud.stopRemoteSubStreamView(userId);
+                activity.videoViewShare.setVisibility(View.GONE);
+            }
         }
+
 
         /**
          * 有用户屏蔽了声音
@@ -827,7 +853,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
             RoomActivity activity = mContext.get();
             if (activity != null) {
                 if (available) {
-                    final QyVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG,activity.findUserNameByUserid(userId));
+                    final QyVideoView renderView = activity.mVideoViewLayout.onMemberEnter(userId + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, activity.findUserNameByUserid(userId));
                     if (renderView != null) {
                         renderView.setVisibility(View.VISIBLE);
                     }
@@ -1311,7 +1337,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                             QyVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(k);
                             String userIdj = cloudVideoView.getUserId();
                             if (TextUtils.isEmpty(userIdj)) {
-                                cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG,findUserNameByUserid(userLocation.get(j)));
+                                cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, findUserNameByUserid(userLocation.get(j)));
                                 cloudVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
                                 trtcCloud.startRemoteView(userLocation.get(j), cloudVideoView.getVideoView());
                                 break;
@@ -1379,6 +1405,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
         public static final String MULTI_SCREEN = "multi_screen";
         //强制退出
         public static final String FORCE_EXIT = "force_exit";
+        //广播指定画面
+        public static final String WATCH = "watch";
 
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
@@ -1511,7 +1539,6 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                         }
                     });
                     break;
-
                 case MULTI_SCREEN://多画面
                     String users = jo.getString("layout");
                     final String[] userIds = users.split(",");
@@ -1521,6 +1548,57 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                             swapViewByIndex(userIds);
                         }
                     });
+                    break;
+                case WATCH:
+                    //{"broadcast":"on","acctno":"9530","roomNo":"9999","cmd":"watch"}
+                    broadcastStatus = jo.getString("broadcast");
+                    acctno = jo.getString("acctno");
+                    if (broadcastStatus.equalsIgnoreCase("on")) {
+                        //mVideoViewLayout.setCanZoomFullscreen(false);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                QyVideoView qyVideoView = mVideoViewLayout.getCloudVideoViewByUseId(acctno);
+                                if (null != qyVideoView) {
+                                    videoViewShare.setVisibility(View.VISIBLE);
+                                    if (selfUserId.equalsIgnoreCase(qyVideoView.getUserId())) {
+                                        trtcCloud.stopLocalPreview();
+                                        trtcCloud.startLocalPreview(true,videoViewShare);
+                                    } else {
+                                        trtcCloud.stopRemoteView(acctno);
+                                        trtcCloud.startRemoteView(acctno, videoViewShare);
+                                    }
+                                }
+
+                               /* qyVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(4));
+                                qyVideoView.setVisibility(View.VISIBLE);*/
+                            }
+                        });
+                    } else {
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                QyVideoView qyVideoView = mVideoViewLayout.getCloudVideoViewByUseId(acctno);
+                                if (null != qyVideoView) {
+                                    videoViewShare.setVisibility(View.GONE);
+                                    if (selfUserId.equalsIgnoreCase(qyVideoView.getUserId())) {
+                                        trtcCloud.stopLocalPreview();
+                                        trtcCloud.startLocalPreview(true,qyVideoView.getVideoView());
+                                    } else {
+                                        trtcCloud.stopRemoteView(acctno);
+                                        trtcCloud.startRemoteView(acctno, qyVideoView.getVideoView());
+                                    }
+                                }
+
+                               /* qyVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(4));
+                                qyVideoView.setVisibility(View.VISIBLE);*/
+                            }
+                        });
+                        /*mVideoViewLayout.setCanZoomFullscreen(true);
+                        acctno = null;*/
+                    }
+                    /*mVideoViewLayout.zoom(acctno);*/
                     break;
                 case FORCE_EXIT:
                     String msg = jo.getString("msg");

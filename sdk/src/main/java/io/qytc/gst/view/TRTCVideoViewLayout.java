@@ -61,6 +61,8 @@ public class TRTCVideoViewLayout extends RelativeLayout {
     private int mMode;
 
     private String mSelfUserId;
+    private boolean mCanZoomFullscreen = true;//是否可以操作放大或缩小画面
+    private String mFullScreenUserIdTag = DEFAULT_USERID;//当前全屏你画面用户id
     private WeakReference<ITRTCVideoViewLayoutListener> mListener = new WeakReference<>(null);
 
     HashMap<Integer, Integer> mapNetworkQuality = null;
@@ -91,6 +93,10 @@ public class TRTCVideoViewLayout extends RelativeLayout {
 
     public void setUserId(String userId) {
         mSelfUserId = userId;
+    }
+
+    public void setCanZoomFullscreen(boolean canZoomFullscreen) {
+        mCanZoomFullscreen = canZoomFullscreen;
     }
 
     public void setListener(ITRTCVideoViewLayoutListener listener) {
@@ -173,6 +179,8 @@ public class TRTCVideoViewLayout extends RelativeLayout {
         mGrid4ParamList.add(layoutParams1);
         mGrid4ParamList.add(layoutParams2);
         mGrid4ParamList.add(layoutParams3);
+        // 大画面参数
+        mGrid4ParamList.add(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
     public void initFloatLayoutParams() {
@@ -213,7 +221,11 @@ public class TRTCVideoViewLayout extends RelativeLayout {
             QyVideoView cloudVideoView = new QyVideoView(mContext);
             cloudVideoView.setVisibility(GONE);
             cloudVideoView.setId(1000 + i);
-            cloudVideoView.setClickable(true);
+            if (!mCanZoomFullscreen) {
+                cloudVideoView.setClickable(false);
+            }else{
+                cloudVideoView.setClickable(true);
+            }
             cloudVideoView.setTag(R.string.str_tag_pos, i);
             cloudVideoView.setBackgroundColor(Color.BLACK);
             addToolbarLayout(cloudVideoView);
@@ -305,7 +317,7 @@ public class TRTCVideoViewLayout extends RelativeLayout {
             QyVideoView renderView = mVideoViewList.get(i);
             if (renderView != null) {
                 String vUserId = renderView.getUserId();
-                if (userId.equalsIgnoreCase(vUserId)) {
+                if ((!TextUtils.isEmpty(vUserId))&&userId.equalsIgnoreCase(vUserId)) {
                     return renderView;
                 }
                 if (videoView == null && TextUtils.isEmpty(vUserId)) {
@@ -649,6 +661,39 @@ public class TRTCVideoViewLayout extends RelativeLayout {
                 }
             }
         }
+    }
+
+
+    public void zoom(String userID) {
+        if (userID == null) {
+            cancelZoom();
+            return;
+        }
+
+        if (!DEFAULT_USERID.equals(mFullScreenUserIdTag)) {
+            cancelZoom();
+        }
+
+        for (int i = 0; i < mVideoViewList.size(); i++) {
+            if (mVideoViewList.get(i).getUserId().equals(userID)) {
+                mVideoViewList.get(i).setVisibility(VISIBLE);
+                mVideoViewList.get(i).setLayoutParams(mGrid4ParamList.get(4));
+                mVideoViewList.get(i).bringToFront();
+                mFullScreenUserIdTag = userID;
+                break;
+            }
+        }
+    }
+
+    //移除放大效果
+    private void cancelZoom() {
+        for (int i = 0; i < mVideoViewList.size(); i++) {
+            if (mVideoViewList.get(i).getUserId().equals(mFullScreenUserIdTag)) {
+                mVideoViewList.get(i).setLayoutParams(mGrid4ParamList.get(i));
+                break;
+            }
+        }
+        mFullScreenUserIdTag = DEFAULT_USERID;
     }
 
 }
