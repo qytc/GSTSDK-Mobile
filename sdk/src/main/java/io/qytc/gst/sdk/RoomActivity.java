@@ -110,10 +110,8 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                     if (webSocketListener.webSocketConnect) {
                         mHandler.sendEmptyMessageDelayed(1, 3000);
                     }
-
                     break;
             }
-
         }
     };
     private EchoWebSocketListener webSocketListener;
@@ -1346,6 +1344,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                                     cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, findUserNameByUserid(userLocation.get(j)));
                                     cloudVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
                                     trtcCloud.startRemoteView(userLocation.get(j), cloudVideoView.getVideoView());
+                                    cloudVideoView.setVisibility(View.VISIBLE);
                                     break;
                                 }
                             }
@@ -1360,6 +1359,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                                 cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, findUserNameByUserid(userLocation.get(j)));
                                 cloudVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
                                 trtcCloud.startRemoteView(userLocation.get(j), cloudVideoView.getVideoView());
+                                cloudVideoView.setVisibility(View.VISIBLE);
                                 break;
                             }
                         }
