@@ -17,6 +17,7 @@ public class QyVideoView extends RelativeLayout {
     private TXCloudVideoView mVideoView;
     private TextView mTvUserName;
     private String mUserName;
+    private String mUserId;
 
     public QyVideoView(Context context) {
         super(context);
@@ -42,6 +43,7 @@ public class QyVideoView extends RelativeLayout {
     //设置视频播放ID和用户名字
     public void setUserId(String userId, String userName) {
         mVideoView.setUserId(userId);
+        mUserId = userId;
         mUserName = userName;
         mTvUserName.setText(userName);
     }

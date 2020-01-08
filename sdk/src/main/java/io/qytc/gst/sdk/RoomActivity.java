@@ -1325,12 +1325,14 @@ public class RoomActivity extends Activity implements View.OnClickListener,
 
         int index = 0;
         for (int j = 0; j < userLocation.size(); j++) {
-            if (!TextUtils.isEmpty(userLocation.get(j)) && (!userLocation.get(j).equalsIgnoreCase("-1"))) {
+            String userLocations = userLocation.get(j);
+            if (!TextUtils.isEmpty(userLocations) && (!userLocations.equalsIgnoreCase("-1"))) {
                 for (int i = 0; i < mVideoViewLayout.getVideoViewList().size(); i++) {
                     QyVideoView qyVideoView = mVideoViewLayout.getVideoViewList().get(i);
                     String userId = qyVideoView.getUserId();
+
                     if (!TextUtils.isEmpty(userId)) {
-                        if (userId.contains(userLocation.get(j))) {
+                        if (userId.contains(userLocations)) {
                             qyVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
                             qyVideoView.setVisibility(View.VISIBLE);
                             break;
@@ -1341,7 +1343,7 @@ public class RoomActivity extends Activity implements View.OnClickListener,
                                 QyVideoView cloudVideoView = mVideoViewLayout.getVideoViewList().get(k);
                                 String userIdj = cloudVideoView.getUserId();
                                 if (TextUtils.isEmpty(userIdj)) {
-                                    cloudVideoView.setUserId(userLocation.get(j) + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, findUserNameByUserid(userLocation.get(j)));
+                                    cloudVideoView.setUserId(userLocations + TRTCCloudDef.TRTC_VIDEO_STREAM_TYPE_BIG, findUserNameByUserid(userLocation.get(j)));
                                     cloudVideoView.setLayoutParams(mVideoViewLayout.getmGrid4ParamList().get(index++));
                                     trtcCloud.startRemoteView(userLocation.get(j), cloudVideoView.getVideoView());
                                     cloudVideoView.setVisibility(View.VISIBLE);

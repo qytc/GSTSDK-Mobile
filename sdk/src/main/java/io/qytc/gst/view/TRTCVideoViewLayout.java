@@ -124,9 +124,15 @@ public class TRTCVideoViewLayout extends RelativeLayout {
 
     private void showView() {
         mLayout.removeAllViews();
-        for (int i = 0; i < mGrid4ParamList.size(); i++) {
+        for (int i = 0; i < mVideoViewList.size(); i++) {
             QyVideoView cloudVideoView = mVideoViewList.get(i);
-            RelativeLayout.LayoutParams layoutParams = mGrid4ParamList.get(i);
+            RelativeLayout.LayoutParams layoutParams ;
+            if (i>=mGrid4ParamList.size()){
+                layoutParams = mGrid4ParamList.get(mGrid4ParamList.size()-1);
+            }else{
+                layoutParams = mGrid4ParamList.get(i);
+            }
+            cloudVideoView.setVisibility(INVISIBLE);
             cloudVideoView.setLayoutParams(layoutParams);
             mLayout.addView(cloudVideoView);
         }
@@ -221,11 +227,12 @@ public class TRTCVideoViewLayout extends RelativeLayout {
             QyVideoView cloudVideoView = new QyVideoView(mContext);
             cloudVideoView.setVisibility(GONE);
             cloudVideoView.setId(1000 + i);
-            if (!mCanZoomFullscreen) {
+            /*if (!mCanZoomFullscreen) {
                 cloudVideoView.setClickable(false);
             }else{
                 cloudVideoView.setClickable(true);
-            }
+            }*/
+            cloudVideoView.setClickable(true);
             cloudVideoView.setTag(R.string.str_tag_pos, i);
             cloudVideoView.setBackgroundColor(Color.BLACK);
             addToolbarLayout(cloudVideoView);
